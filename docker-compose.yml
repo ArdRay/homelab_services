@@ -7,7 +7,7 @@ services:
       - "--providers.docker.endpoint=tcp://socket_proxy.internal:2375"
       - "--providers.docker.swarmMode=false"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=t2_proxy"
+      - "--providers.docker.network=proxy"
       - "--providers.file.directory=/config"
       - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
