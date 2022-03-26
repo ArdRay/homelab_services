@@ -64,8 +64,7 @@ services:
       - socket_proxy
       - dns
     environment:
-      CF_API_EMAIL: ${CF_API_EMAIL}
-      CF_API_KEY: ${CF_API_KEY}
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
       #HTTP_PROXY: http://http_proxy.internal:3128
       #HTTPS_PROXY: http://http_proxy.internal:3128
       #NO_PROXY: "socket_proxy.internal,*.internal,,127.0.0.1,localhost"
