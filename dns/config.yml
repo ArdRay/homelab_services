@@ -1,0 +1,30 @@
+upstream:
+  default:
+    - https://cloudflare-dns.com/dns-query
+    - https://fi.doh.dns.snopyta.org/dns-query
+    - https://doh.libredns.gr/dns-query
+    - https://doh-ch.blahdns.com:4443/dns-query
+mapping:
+  int.mxard.tech: 10.10.2.7
+blocking:
+  blackLists:
+    ads:
+      - https://s3.amazonaws.com/lists.disconnect.me/simple_ad.txt
+      - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
+      - https://mirror1.malwaredomains.com/files/justdomains
+      - http://sysctl.org/cameleon/hosts
+      - https://zeustracker.abuse.ch/blocklist.php?download=domainblocklist
+      - https://s3.amazonaws.com/lists.disconnect.me/simple_tracking.txt
+  clientGroupsBlock:
+    default:
+      - ads
+  blockType: zeroIp
+caching:
+  prefetching: true
+prometheus:
+  enable: true
+  path: /metrics
+port: 53
+httpPort: 4000
+bootstrapDns: udp:1.1.1.1
+disableIPv6: true
