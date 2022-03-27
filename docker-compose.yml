@@ -221,7 +221,7 @@ services:
       - /etc/localtime:/etc/localtime:ro
     depends_on:
       gitea_postgres:
-        condition: service_healthy
+        condition: service_started
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.gitea-rtr.rule=Host(`git.${INTERNAL_DOMAIN}`)"
@@ -273,7 +273,7 @@ services:
     restart: always
     depends_on:
       authelia_postgres:
-        condition: service_healthy
+        condition: service_started
       authelia_redis:
         condition: service_started
       ldap_proxy:
