@@ -7,7 +7,7 @@ services:
       - "--providers.docker.endpoint=tcp://socket_proxy.internal:2375"
       - "--providers.docker.swarmMode=false"
       - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=proxy"
+      - "--providers.docker.network=t2_proxy"
       - "--providers.file.directory=/config"
       - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
@@ -440,7 +440,7 @@ services:
 
   grafana:
     image: grafana/grafana-oss:8.4.4@sha256:b1a82a9f837ce269542cc023f0607753ca7f709195d2bdec93e2e703fd13f8c0
-    user: 472:0
+    user: "0:0"
     networks:
       - proxy
       - monitoring
@@ -516,7 +516,8 @@ services:
 
 networks:
   proxy:
-    driver: bridge
+    external: true
+    name: t2_proxy
   socket_proxy:
     driver: bridge
     internal: true
