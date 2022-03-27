@@ -416,7 +416,7 @@ services:
       - '--storage.tsdb.retention.time=120d'
     volumes:
       - ./prometheus/data:/prometheus
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/config.yml:/etc/prometheus/prometheus.yml:ro
     environment:
       - TZ=Europe/Berlin
     healthcheck:
@@ -493,6 +493,7 @@ services:
     command: -config.file=/etc/loki/loki-config.yaml
     user: "0:0"
     networks:
+      - proxy
       - monitoring
     restart: always
     volumes:
