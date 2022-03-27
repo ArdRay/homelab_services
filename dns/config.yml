@@ -27,5 +27,6 @@ prometheus:
   enable: true
   path: /metrics
 port: 53
+httpPort: 4000
 bootstrapDns: 1.1.1.1
 disableIPv6: true

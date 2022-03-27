@@ -17,6 +17,9 @@ services:
       - "--entrypoints.tls.address=:443"
       - "--entrypoints.dns_udp.address=:53/udp"
       - "--entrypoints.dns_tcp.address=:53"
+      - "--entrypoints.loki.address=:3100"
+      - "--entrypoints.ssh.address=:2222"
+      - "--entrypoints.squid.address=:3128"
       - "--entrypoints.ping.address=:8082"
       - "--api=true"
       - "--api.dashboard=true"
@@ -52,6 +55,18 @@ services:
         published: 53
         protocol: udp
         mode: host
+      - target: 3100
+        published: 3100
+        protocol: tcp
+        mode: host
+      - target: 2222
+        published: 22
+        protocol: tcp
+        mode: host
+      - target: 3128
+        published: 3128
+        protocol: tcp
+        mode: host
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8082/ping || exit 1
       interval: 5s
@@ -59,6 +74,7 @@ services:
     volumes:
       - ./proxy/tls:/letsencrypt
       - ./proxy/tls_options.yml:/config/tls_options.yml:ro
+      - ./proxy/default_headers.yml:/config/default_headers.yml:ro
     networks:
       - proxy
       - socket_proxy
@@ -139,6 +155,7 @@ services:
     image: spx01/blocky:v0.18@sha256:e37a4ab21bd737c584cc733f10ed0d626e86308a547e7201877af85dfc443a7e
     networks:
       - dns
+      - monitoring
     depends_on:
       proxy:
         condition: service_healthy
@@ -161,6 +178,341 @@ services:
     mem_reservation: 64m
     #<<: *logging
 
+  ######
+  ## GITEA
+  ######
+
+  gitea_server:
+    image: gitea/gitea:1.16.5@sha256:4b54e3f659b425a94b3fc448bedca69a52140aaa86becdaf89ff0dc422efe144
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=gitea_postgres:5432
+      - GITEA__database__NAME=${GITEA_DATABASE_NAME}
+      - GITEA__database__USER=${GITEA_DATABASE_USER}
+      - GITEA__database__PASSWD=${GITEA_DATABASE_PASSWORD}
+      - GITEA__security__SECRET_KEY=${GITEA_SECURITY_SECRET_KEY}
+      - GITEA__server__PROTOCOL=http
+      - GITEA__server__DOMAIN=git.${INTERNAL_DOMAIN}
+      - GITEA__server__SSH_DOMAIN=git.${INTERNAL_DOMAIN}
+      - GITEA__server__ROOT_URL=https://git.${INTERNAL_DOMAIN}
+      - GITEA__server__HTTP_ADDR=0.0.0.0
+      - GITEA__server__HTTP_PORT=3000
+      - GITEA__admin__DISABLE_REGULAR_ORG_CREATION=true
+      - GITEA__service__DISABLE_REGISTRATION=true
+      - GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES=192.168.0.0/16
+      - GITEA__webhook__ALLOWED_HOST_LIST=external,*.${INTERNAL_DOMAIN}
+      - GITEA__oauth2__ENABLE=true
+      - GITEA__federation__ENABLED=false
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "curl --silent --fail --output /dev/null http://localhost:3000 || exit 1" ]
+      timeout: 45s
+      interval: 20s
+      retries: 10
+      start_period: 5s
+    networks:
+      - proxy
+      - gitea_backend
+      - ldap_proxy 
+    volumes:
+      - ./gitea_server:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      gitea_postgres:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gitea-rtr.rule=Host(`git.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.gitea-rtr.entrypoints=tls"
+      - "traefik.http.routers.gitea-rtr.tls=true"
+      - "traefik.http.routers.gitea-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gitea-rtr.service=gitea-svc"
+      - "traefik.http.services.gitea-svc.loadbalancer.server.port=3000"
+      - "traefik.http.routers.gitea-rtr.middlewares=default-headers@file"
+      - "traefik.tcp.routers.gitea-ssh-rtr.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.gitea-ssh-rtr.entrypoints=ssh"
+      - "traefik.tcp.routers.gitea-ssh-rtr.tls=false"
+      - "traefik.tcp.routers.gitea-ssh-rtr.service=gitea-ssh-svc"
+      - "traefik.tcp.services.gitea-ssh-svc.loadbalancer.server.port=22"
+    cpus: 2
+    mem_limit: 2048m
+    mem_reservation: 256m
+
+  gitea_postgres:
+    image: postgres:13
+    restart: always
+    environment:
+      - POSTGRES_USER=${GITEA_DATABASE_USER}
+      - POSTGRES_PASSWORD=${GITEA_DATABASE_PASSWORD}
+      - POSTGRES_DB=${GITEA_DATABASE_NAME}
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "$$POSTGRES_DB", "-U", "$$POSTGRES_USER" ]
+      timeout: 45s
+      interval: 20s
+      retries: 10
+      start_period: 5s
+    networks:
+      - gitea_backend
+    volumes:
+      - ./gitea_postgres:/var/lib/postgresql/data
+    cpus: 1
+    mem_limit: 512m
+    mem_reservation: 128m
+
+  ####
+  ## AUTHELIA
+  ####
+
+   authelia_server:
+    image: authelia/authelia:4.34.5@sha256:a3514a21a862b7e62d6f69ce6f5ebd9635cca587940a8f913e9efa14193a3eef
+    volumes:
+      - ./authelia_server/configuration.yml:/config/configuration.yml
+    hostname: authelia.internal
+    restart: always
+    depends_on:
+      authelia_postgres:
+        condition: service_healthy
+      authelia_redis:
+        condition: service_started
+      ldap_proxy:
+        condition: service_healthy
+    networks:
+      - proxy
+      - authelia_backend
+      - ldap_proxy
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.http.routers.authelia-rtr.rule=Host(`idp.${EXTERNAL_DOMAIN}`)'
+      - 'traefik.http.routers.authelia-rtr.entrypoints=tls'
+      - 'traefik.http.routers.authelia-rtr.tls=true'
+      - "traefik.http.routers.authelia-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.authelia-rtr.service=authelia-svc"
+      - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
+      - "traefik.http.routers.authelia-rtr.middlewares=default-headers@file"
+      # - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia.internal:9091/api/verify?rd=https://idp.${EXTERNAL_DOMAIN}/'
+      # - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
+      # - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
+      # - 'traefik.http.middlewares.authelia-basic.forwardauth.address=http://authelia:9091/api/verify?auth=basic'
+      # - 'traefik.http.middlewares.authelia-basic.forwardauth.trustForwardHeader=true'
+      # - 'traefik.http.middlewares.authelia-basic.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
+      # - "traefik.http.routers.authelia.middlewares=default-headers@file"
+    cpus: 2
+    mem_limit: 256m
+    mem_reservation: 64m
+
+  authelia_postgres:
+    image: postgres:alpine3.15@sha256:b7ffee5fd914008b41f265c76248586e78b52ef77b3a5c2ac48393633831f7fb
+    restart: always
+    hostname: authelia_postgres.internal
+    networks:
+      - authelia_backend
+    volumes:
+      - ./authelia_postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=authelia
+      - POSTGRES_USER=${POSTGRES_AUTHELIA_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_AUTHELIA_PASSWORD}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q"]
+      interval: 10s
+      start_period: 30s
+    cpus: 1
+    mem_limit: 512m
+    mem_reservation: 128m
+  
+  authelia_redis:
+    image: redis:alpine3.15@sha256:32f8cf4bf6412626b21273fed376182b6786b75182e4a19f90f3f57d01362fbb
+    restart: always
+    hostname: authelia_redis.internal
+    networks:
+      - authelia_backend
+    volumes:
+      - ./authelia_redis:/var/lib/redis
+    cpus: 1
+    mem_limit: 128m
+    mem_reservation: 32m
+
+  ldap_proxy:
+    build: ./stunnel
+    hostname: ldap_proxy.internal
+    networks:
+      - ldap_proxy
+    environment:
+      STUNNEL_SERVICE: ldap
+      STUNNEL_ACCEPT: 389
+      STUNNEL_CONNECT: ldap.jumpcloud.com:636
+    healthcheck:
+      test: netstat -an | grep ':389' > /dev/null; if [ 0 != $$? ]; then exit 1; fi;
+      interval: 5s
+      timeout: 10s
+    restart: unless-stopped
+    cpus: 1
+    mem_limit: 64m
+    mem_reservation: 32m
+
+  squid_proxy: 
+    image: ubuntu/squid:4.13-21.10_edge@sha256:b8a7b58e7d6b66dc03b3460b60b173201a8a94d08be735b824afbd1c19947bb8
+    hostname: proxy.internal
+    networks:
+      - proxy
+      - squid_exporter
+    volumes:
+      - ./squid/config.conf:/etc/squid/squid.conf
+    environment:
+      HTTP_PROXY: http://proxy.internal:3128
+      HTTPS_PROXY: http://proxy.internal:3128
+      NO_PROXY: "*.internal,192.168.0.0/16,127.0.0.1,localhost"
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.squid_proxy-rtr.rule=Host(`proxy.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.squid_proxy-rtr.entrypoints=squid"
+      - "traefik.http.routers.squid_proxy-rtr.tls=true"
+      - "traefik.http.routers.squid_proxy-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.squid_proxy-rtr.service=squid_proxy-svc"
+      - "traefik.http.services.squid_proxy-svc.loadbalancer.server.port=9090"
+      - "traefik.http.routers.squid_proxy-rtr.middlewares=default-headers@file"
+    cpus: 1
+    mem_limit: 512m
+    mem_reservation: 256m
+
+  squid_proxy_exporter:
+    image: boynux/squid-exporter:v1.10.3@sha256:f9ed763d95356dc943542935817c81ebdd134331147a4313c3e53d00e40268df
+    hostname: squid_proxy_exporter.internal
+    networks:
+      - squid_exporter
+      - monitoring
+    depends_on:
+      http_proxy:
+        condition: service_started
+      prometheus:
+        condition: service_healthy
+    environment:
+      SQUID_HOSTNAME: proxy.internal
+      SQUID_PORT: 3128
+      SQUID_EXPORTER_LISTEN: :9301
+      HTTP_PROXY: http://proxy.internal:3128
+      HTTPS_PROXY: http://proxy.internal:3128
+      NO_PROXY: "*.internal,192.168.0.0/16,127.0.0.1,localhost"
+    restart: unless-stopped
+    cpus: 1
+    mem_limit: 128m
+    mem_reservation: 64m
+
+  prometheus:
+    image: prom/prometheus:v2.34.0@sha256:cb42332b66ac51a05c52f255e48a4496c0a172676093123bf28b37762009e78a
+    user: "65534:65534"
+    networks:
+      - proxy
+      - monitoring
+    depends_on:
+      proxy:
+        condition: service_healthy
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=120d'
+    volumes:
+      - ./prometheus/data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    environment:
+      - TZ=Europe/Berlin
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:9090 || exit 1
+      interval: 15s
+      timeout: 10s
+      start_period: 60s
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.prometheus-rtr.rule=Host(`prometheus.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.prometheus-rtr.entrypoints=tls"
+      - "traefik.http.routers.prometheus-rtr.tls=true"
+      - "traefik.http.routers.prometheus-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.prometheus-rtr.service=prometheus-svc"
+      - "traefik.http.services.prometheus-svc.loadbalancer.server.port=9090"
+      - "traefik.http.routers.prometheus-rtr.middlewares=default-headers@file"
+    cpus: 1
+    mem_limit: 1024m
+    mem_reservation: 256m
+
+  grafana:
+    image: grafana/grafana-oss:8.4.4@sha256:b1a82a9f837ce269542cc023f0607753ca7f709195d2bdec93e2e703fd13f8c0
+    user: 472:0
+    networks:
+      - proxy
+      - monitoring
+      - ldap_proxy
+    depends_on:
+      proxy:
+        condition: service_healthy
+      prometheus:
+        condition: service_healthy
+      ldap_proxy:
+        condition: service_started
+    volumes:
+      - ./grafana/data:/var/lib/grafana
+      - ./grafana/provision:/etc/grafana/provisioning
+      - ./grafana/ldap.toml:/config/ldap.toml:ro
+    environment:
+      - GF_ANALYTICS_REPORTING_ENABLED=false
+      - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=false
+      - GF_ADMIN_USER=${GRAFANA_USER}
+      - GF_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Homelab
+      - GF_AUTH_ANONYMOUS_HIDE_VERSION=true
+      - GF_AUTH_LDAP_ENABLED=true
+      - GF_AUTH_LDAP_CONFIG_FILE=/config/ldap.toml
+      - GF_LOG_LEVEL=warn
+      - GF_PANELS_DISABLE_SANITIZE_HTML=true
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,grafana-simple-json-datasource
+      - GF_PLUGINS_APP_TLS_SKIP_VERIFY_INSECURE=true
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+      interval: 5s
+      timeout: 10s
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.grafana.entrypoints=tls"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.grafana.service=grafana"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.http.routers.grafana.middlewares=default-headers@file"
+    cpus: 2
+    mem_limit: 512m
+    mem_reservation: 128m
+
+  loki:
+    image: grafana/loki:main@sha256:f4e4e128139d737e82c4d112315060fca9297b833df6a621918a100ce3fa390b
+    command: -config.file=/etc/loki/loki-config.yaml
+    networks:
+      - monitoring
+    restart: always
+    volumes:
+      - ./loki:/data/loki
+      - ./loki/config.yaml:/etc/loki/loki-config.yaml:ro
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1
+      interval: 5s
+      timeout: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.loki.rule=Host(`${HOST_IP}`)"
+      - "traefik.http.routers.loki.entrypoints=loki"
+      - "traefik.http.routers.loki.tls=false"
+      - "traefik.http.routers.loki.service=loki"
+      - "traefik.http.services.loki.loadbalancer.server.port=3100"
+    cpus: 2
+    mem_limit: 512m
+    mem_reservation: 128m
+
 networks:
   proxy:
     driver: bridge
@@ -168,4 +520,17 @@ networks:
     driver: bridge
     internal: true
   dns:
+    driver: bridge
+  gitea_backend:
+    driver: bridge
+    internal: true
+  authelia_backend:
+    driver: bridge
+    internal: true
+  squid_exporter:
+    driver: bridge
+    internal: true
+  ldap_proxy:
+    driver: bridge
+  monitoring:
     driver: bridge
