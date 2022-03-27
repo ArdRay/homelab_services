@@ -403,6 +403,7 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.34.0@sha256:cb42332b66ac51a05c52f255e48a4496c0a172676093123bf28b37762009e78a
+    user: "0:0"
     networks:
       - proxy
       - monitoring
