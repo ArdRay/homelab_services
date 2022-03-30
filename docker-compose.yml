@@ -284,20 +284,20 @@ services:
       - ldap_proxy
     labels:
       - 'traefik.enable=true'
-      - 'traefik.http.routers.authelia-rtr.rule=Host(`idp.${EXTERNAL_DOMAIN}`)'
+      - 'traefik.http.routers.authelia-rtr.rule=Host(`idp.${INTERNAL_DOMAIN}`)'
       - 'traefik.http.routers.authelia-rtr.entrypoints=tls'
       - 'traefik.http.routers.authelia-rtr.tls=true'
       - "traefik.http.routers.authelia-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.authelia-rtr.service=authelia-svc"
       - "traefik.http.services.authelia-svc.loadbalancer.server.port=9091"
       - "traefik.http.routers.authelia-rtr.middlewares=default-headers@file"
-      # - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia.internal:9091/api/verify?rd=https://idp.${EXTERNAL_DOMAIN}/'
-      # - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
-      # - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
-      # - 'traefik.http.middlewares.authelia-basic.forwardauth.address=http://authelia:9091/api/verify?auth=basic'
-      # - 'traefik.http.middlewares.authelia-basic.forwardauth.trustForwardHeader=true'
-      # - 'traefik.http.middlewares.authelia-basic.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
-      # - "traefik.http.routers.authelia.middlewares=default-headers@file"
+      - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia.internal:9091/api/verify?rd=https://idp.${INTERNAL_DOMAIN}/'
+      - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
+      - 'traefik.http.middlewares.authelia-basic.forwardauth.address=http://authelia:9091/api/verify?auth=basic'
+      - 'traefik.http.middlewares.authelia-basic.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.authelia-basic.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
+      - "traefik.http.routers.authelia.middlewares=default-headers@file"
     cpus: 2
     mem_limit: 256m
     mem_reservation: 64m
@@ -433,7 +433,7 @@ services:
       - "traefik.http.routers.prometheus-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.prometheus-rtr.service=prometheus-svc"
       - "traefik.http.services.prometheus-svc.loadbalancer.server.port=9090"
-      - "traefik.http.routers.prometheus-rtr.middlewares=default-headers@file"
+      - "traefik.http.routers.prometheus-rtr.middlewares=authelia@docker, default-headers@file"
     cpus: 1
     mem_limit: 1024m
     mem_reservation: 256m
