@@ -64,6 +64,15 @@ services:
     mem_limit: 64m
     mem_reservation: 32m
 
+  flared:
+    image: ghcr.io/flaresolverr/flaresolverr:latest@sha256:cff2167146ba15bf00b1a1ddc142dd8b06a1a93c6addba369eccff5b8da81492
+    hostname: flared.internal
+    network_mode: service:vpn
+    environment:
+      - LOG_LEVEL=info
+      - TZ=Europe/London
+    restart: unless-stopped    
+
   vpn:
     image: qmcgaw/gluetun:v3.28.1@sha256:c9fd72306d59bb3ed4ac4a1916dd13551c162104d010d1eb1b6611e38904458d
     hostname: vpn.internal
@@ -103,6 +112,13 @@ services:
       - "traefik.http.routers.vpn-rtr.service=vpn-svc"
       - "traefik.http.services.vpn-svc.loadbalancer.server.port=8080"
       - "traefik.http.routers.vpn-rtr.middlewares=authelia@docker,default-headers@file"
+      - "traefik.http.routers.flared-rtr.rule=Host(`flared.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.flared-rtr.entrypoints=tls"
+      - "traefik.http.routers.flared-rtr.tls=true"
+      - "traefik.http.routers.flared-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.flared-rtr.service=flared-svc"
+      - "traefik.http.services.flared-svc.loadbalancer.server.port=8191"
+      - "traefik.http.routers.flared-rtr.middlewares=authelia@docker,default-headers@file"
     cpus: 3
     mem_limit: 512m
     mem_reservation: 128m
@@ -1051,50 +1067,6 @@ services:
     mem_limit: 512m
     mem_reservation: 128m
     <<: *logging
-
-  # searx:
-  #   image: searx/searx:latest
-  #   restart: always
-  #   networks:
-  #     - searx
-  #   command: -f
-  #   volumes:
-  #     - ./searx:/etc/searx:rw
-  #   environment:
-  #     - BIND_ADDRESS=0.0.0.0:8080
-  #     - BASE_URL=https://searx.${INTERNAL_DOMAIN}/
-  #     - MORTY_URL=https://searx.${INTERNAL_DOMAIN}/morty/
-  #     - MORTY_KEY=${MORTY_KEY}
-  #   cap_drop:
-  #     - ALL
-  #   cap_add:
-  #     - CHOWN
-  #     - SETGID
-  #     - SETUID
-  #     - DAC_OVERRIDE
-  #   cpus: 1
-  #   mem_limit: 512m
-  #   mem_reservation: 128m
-  #   <<: *logging
-
-  # morty:
-  #   image: dalf/morty
-  #   command: -timeout 6 -ipv6
-  #   restart: always
-  #   ports:
-  #     - "127.0.0.1:3000:3000"
-  #   networks:
-  #     - searx
-  #   environment:
-  #     - MORTY_KEY=${MORTY_KEY}
-  #     - MORTY_ADDRESS=0.0.0.0:3000
-  #   read_only: true
-  #   cap_drop:
-  #     - ALL
-  #   cpus: 1
-  #   mem_limit: 512m
-  #   mem_reservation: 128m
-  #   <<: *logging
 
   # deemix:
   #   image: registry.gitlab.com/bockiii/deemix-docker
