@@ -10,6 +10,8 @@ scrape_configs:
   - job_name: 'traefik'
     static_configs:
     - targets: ['proxy:8080']
+      labels:
+        instance: 'vmk-srv-01'
 
   - job_name: 'prometheus'
     static_configs:
@@ -22,3 +24,9 @@ scrape_configs:
   - job_name: 'http_proxy'
     static_configs:
     - targets: ['squid_proxy_exporter.internal:9301']
+
+  - job_name: 'node_exporter'
+    static_configs:
+    - targets: ['10.10.2.8:9100']
+      labels:
+        instance: 'vmk-srv-01'
