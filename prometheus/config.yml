@@ -6,6 +6,8 @@ scrape_configs:
   - job_name: 'dns'
     static_configs:
     - targets: ['dns:4000']
+      labels:
+        instance: 'vmk-srv-01'
 
   - job_name: 'traefik'
     static_configs:
@@ -16,14 +18,20 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
     - targets: ['prometheus:9090']
+      labels:
+        instance: 'vmk-srv-01'
 
   - job_name: 'loki'
     static_configs:
     - targets: ['loki:3100']
+      labels:
+        instance: 'vmk-srv-01'
   
   - job_name: 'http_proxy'
     static_configs:
     - targets: ['squid_proxy_exporter.internal:9301']
+      labels:
+        instance: 'vmk-srv-01'
 
   - job_name: 'node_exporter'
     static_configs:
