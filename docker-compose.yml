@@ -332,72 +332,72 @@ services:
     mem_reservation: 32m
     <<: *logging
 
-  http_proxy:
-    image: ubuntu/squid:4.13-21.10_edge
-    hostname: http_proxy.internal
-    networks:
-      - proxies
-    volumes:
-      - /opt/docker/squid/squid.conf:/etc/squid/squid.conf
-    environment:
-      HTTP_PROXY: http://http_proxy.internal:3128
-      HTTPS_PROXY: http://http_proxy.internal:3128
-      NO_PROXY: "*.internal,192.168.0.0/16,127.0.0.1,localhost"
-    restart: unless-stopped
-    cpus: 1
-    mem_limit: 512m
-    mem_reservation: 256m
-    <<: *logging
+  # http_proxy:
+  #   image: ubuntu/squid:4.13-21.10_edge
+  #   hostname: http_proxy.internal
+  #   networks:
+  #     - proxies
+  #   volumes:
+  #     - /opt/docker/squid/squid.conf:/etc/squid/squid.conf
+  #   environment:
+  #     HTTP_PROXY: http://http_proxy.internal:3128
+  #     HTTPS_PROXY: http://http_proxy.internal:3128
+  #     NO_PROXY: "*.internal,192.168.0.0/16,127.0.0.1,localhost"
+  #   restart: unless-stopped
+  #   cpus: 1
+  #   mem_limit: 512m
+  #   mem_reservation: 256m
+  #   <<: *logging
 
-  http_proxy_exporter:
-    image: boynux/squid-exporter
-    hostname: http_proxy_exporter.internal
-    networks:
-      - proxies
-      - monitoring_internal
-    depends_on:
-      http_proxy:
-        condition: service_started
-      prometheus:
-        condition: service_healthy
-    environment:
-      SQUID_HOSTNAME: http_proxy.internal
-      SQUID_PORT: 3128
-      SQUID_EXPORTER_LISTEN: :9301
-      HTTP_PROXY: http://http_proxy.internal:3128
-      HTTPS_PROXY: http://http_proxy.internal:3128
-      NO_PROXY: "*.internal,192.168.0.0/16,127.0.0.1,localhost"
-    restart: unless-stopped
-    cpus: 1
-    mem_limit: 128m
-    mem_reservation: 64m
-    <<: *logging
+  # http_proxy_exporter:
+  #   image: boynux/squid-exporter
+  #   hostname: http_proxy_exporter.internal
+  #   networks:
+  #     - proxies
+  #     - monitoring_internal
+  #   depends_on:
+  #     http_proxy:
+  #       condition: service_started
+  #     prometheus:
+  #       condition: service_healthy
+  #   environment:
+  #     SQUID_HOSTNAME: http_proxy.internal
+  #     SQUID_PORT: 3128
+  #     SQUID_EXPORTER_LISTEN: :9301
+  #     HTTP_PROXY: http://http_proxy.internal:3128
+  #     HTTPS_PROXY: http://http_proxy.internal:3128
+  #     NO_PROXY: "*.internal,192.168.0.0/16,127.0.0.1,localhost"
+  #   restart: unless-stopped
+  #   cpus: 1
+  #   mem_limit: 128m
+  #   mem_reservation: 64m
+  #   <<: *logging
 
-  hello:
-    image: kerwood/hello-world
-    restart: unless-stopped
-    networks:
-      - proxy
-     #- idp
-    depends_on:
-      proxy:
-        condition: service_healthy
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
-      interval: 5s
-      timeout: 10s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.hello.rule=Host(`hello.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.hello.entrypoints=tls"
-      - "traefik.http.routers.hello.tls=true"
-      - "traefik.http.routers.hello.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.hello.service=hello"
-      - "traefik.http.services.hello.loadbalancer.server.port=3000"
-     #- "traefik.http.routers.hello.middlewares=authelia@docker"
-    cpus: 1
-    mem_limit: 128m
-    mem_reservation: 32m
+  # hello:
+  #   image: kerwood/hello-world
+  #   restart: unless-stopped
+  #   networks:
+  #     - proxy
+  #    #- idp
+  #   depends_on:
+  #     proxy:
+  #       condition: service_healthy
+  #   healthcheck:
+  #     test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+  #     interval: 5s
+  #     timeout: 10s
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.hello.rule=Host(`hello.${INTERNAL_DOMAIN}`)"
+  #     - "traefik.http.routers.hello.entrypoints=tls"
+  #     - "traefik.http.routers.hello.tls=true"
+  #     - "traefik.http.routers.hello.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.hello.service=hello"
+  #     - "traefik.http.services.hello.loadbalancer.server.port=3000"
+  #    #- "traefik.http.routers.hello.middlewares=authelia@docker"
+  #   cpus: 1
+  #   mem_limit: 128m
+  #   mem_reservation: 32m
 
   dns:
     image: spx01/blocky
@@ -426,43 +426,43 @@ services:
     mem_reservation: 64m
     #<<: *logging
 
-  prometheus:
-    image: prom/prometheus:latest
-    user: "65534:65534"
-    networks:
-      - prometheus
-      - monitoring_internal
-    depends_on:
-      proxy:
-        condition: service_healthy
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--storage.tsdb.retention.time=120d'
-    volumes:
-      - /data/prometheus:/prometheus
-      - /opt/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    environment:
-      - TZ=Europe/Berlin
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:9090 || exit 1
-      interval: 15s
-      timeout: 10s
-      start_period: 60s
-    restart: always
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.prometheus-rtr.rule=Host(`prometheus.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.prometheus-rtr.entrypoints=tls"
-      - "traefik.http.routers.prometheus-rtr.tls=true"
-      - "traefik.http.routers.prometheus-rtr.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.prometheus-rtr.service=prometheus-svc"
-      - "traefik.http.services.prometheus-svc.loadbalancer.server.port=9090"
-      - "traefik.http.routers.prometheus-rtr.middlewares=authelia@docker,default-headers@file"
-    cpus: 1
-    mem_limit: 1024m
-    mem_reservation: 256m
-    #<<: *logging
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   user: "65534:65534"
+  #   networks:
+  #     - prometheus
+  #     - monitoring_internal
+  #   depends_on:
+  #     proxy:
+  #       condition: service_healthy
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #     - '--storage.tsdb.retention.time=120d'
+  #   volumes:
+  #     - /data/prometheus:/prometheus
+  #     - /opt/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #   environment:
+  #     - TZ=Europe/Berlin
+  #   healthcheck:
+  #     test: wget --no-verbose --tries=1 --spider http://localhost:9090 || exit 1
+  #     interval: 15s
+  #     timeout: 10s
+  #     start_period: 60s
+  #   restart: always
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.prometheus-rtr.rule=Host(`prometheus.${INTERNAL_DOMAIN}`)"
+  #     - "traefik.http.routers.prometheus-rtr.entrypoints=tls"
+  #     - "traefik.http.routers.prometheus-rtr.tls=true"
+  #     - "traefik.http.routers.prometheus-rtr.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.prometheus-rtr.service=prometheus-svc"
+  #     - "traefik.http.services.prometheus-svc.loadbalancer.server.port=9090"
+  #     - "traefik.http.routers.prometheus-rtr.middlewares=authelia@docker,default-headers@file"
+  #   cpus: 1
+  #   mem_limit: 1024m
+  #   mem_reservation: 256m
+  #   #<<: *logging
     
   cadvisor:
     image: google/cadvisor:latest
@@ -489,103 +489,103 @@ services:
     mem_reservation: 256m
     #<<: *logging
 
-  grafana:
-    image: grafana/grafana-oss:8.3.3@sha256:3c22852b378a4ca095ad966e655ed5c403f8182f8b59559580be3d698d6aa56a
-    user: 472:0
-    networks:
-      - proxy
-      - monitoring_internal
-      - proxies
-    depends_on:
-      proxy:
-        condition: service_healthy
-      prometheus:
-        condition: service_healthy
-      ldap_proxy:
-        condition: service_started  
-    volumes:
-      - /data/grafana/data:/var/lib/grafana
-      - /data/grafana/provision:/etc/grafana/provisioning
-      - /opt/docker/grafana/ldap.toml:/config/ldap.toml:ro
-    environment:
-      - GF_ANALYTICS_REPORTING_ENABLED=false
-      - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=false
-      - GF_ADMIN_USER=${GRAFANA_USER}
-      - GF_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_AUTH_ANONYMOUS_ORG_NAME=Homelab
-      - GF_AUTH_ANONYMOUS_HIDE_VERSION=true
-      - GF_AUTH_LDAP_ENABLED=true
-      - GF_AUTH_LDAP_CONFIG_FILE=/config/ldap.toml
-      - GF_LOG_LEVEL=warn
-      - GF_PANELS_DISABLE_SANITIZE_HTML=true
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,grafana-simple-json-datasource
-      - GF_PLUGINS_APP_TLS_SKIP_VERIFY_INSECURE=true
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
-      interval: 5s
-      timeout: 10s
-    restart: always
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.grafana.entrypoints=tls"
-      - "traefik.http.routers.grafana.tls=true"
-      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.grafana.service=grafana"
-      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-      - "traefik.http.routers.grafana.middlewares=authelia@docker,default-headers@file"
-    cpus: 2
-    mem_limit: 512m
-    mem_reservation: 128m
-    <<: *logging
+  # grafana:
+  #   image: grafana/grafana-oss:8.3.3@sha256:3c22852b378a4ca095ad966e655ed5c403f8182f8b59559580be3d698d6aa56a
+  #   user: 472:0
+  #   networks:
+  #     - proxy
+  #     - monitoring_internal
+  #     - proxies
+  #   depends_on:
+  #     proxy:
+  #       condition: service_healthy
+  #     prometheus:
+  #       condition: service_healthy
+  #     ldap_proxy:
+  #       condition: service_started  
+  #   volumes:
+  #     - /data/grafana/data:/var/lib/grafana
+  #     - /data/grafana/provision:/etc/grafana/provisioning
+  #     - /opt/docker/grafana/ldap.toml:/config/ldap.toml:ro
+  #   environment:
+  #     - GF_ANALYTICS_REPORTING_ENABLED=false
+  #     - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=false
+  #     - GF_ADMIN_USER=${GRAFANA_USER}
+  #     - GF_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+  #     - GF_USERS_ALLOW_SIGN_UP=false
+  #     - GF_AUTH_ANONYMOUS_ORG_NAME=Homelab
+  #     - GF_AUTH_ANONYMOUS_HIDE_VERSION=true
+  #     - GF_AUTH_LDAP_ENABLED=true
+  #     - GF_AUTH_LDAP_CONFIG_FILE=/config/ldap.toml
+  #     - GF_LOG_LEVEL=warn
+  #     - GF_PANELS_DISABLE_SANITIZE_HTML=true
+  #     - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,grafana-simple-json-datasource
+  #     - GF_PLUGINS_APP_TLS_SKIP_VERIFY_INSECURE=true
+  #   healthcheck:
+  #     test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+  #     interval: 5s
+  #     timeout: 10s
+  #   restart: always
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.grafana.rule=Host(`grafana.${INTERNAL_DOMAIN}`)"
+  #     - "traefik.http.routers.grafana.entrypoints=tls"
+  #     - "traefik.http.routers.grafana.tls=true"
+  #     - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.grafana.service=grafana"
+  #     - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+  #     - "traefik.http.routers.grafana.middlewares=authelia@docker,default-headers@file"
+  #   cpus: 2
+  #   mem_limit: 512m
+  #   mem_reservation: 128m
+  #   <<: *logging
 
-  loki:
-    image: grafana/loki:2.3.0
-    command: -config.file=/etc/loki/loki-config.yaml
-    networks:
-      - monitoring_internal
-    restart: always
-    volumes:
-      - /data/loki:/data/loki
-      - /opt/docker/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1
-      interval: 5s
-      timeout: 10s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.loki.rule=Host(`${HOST_IP}`)"
-      - "traefik.http.routers.loki.entrypoints=loki"
-      - "traefik.http.routers.loki.tls=false"
-      - "traefik.http.routers.loki.service=loki"
-      - "traefik.http.services.loki.loadbalancer.server.port=3100"
-    cpus: 2
-    mem_limit: 512m
-    mem_reservation: 128m
-    #<<: *logging
+  # loki:
+  #   image: grafana/loki:2.3.0
+  #   command: -config.file=/etc/loki/loki-config.yaml
+  #   networks:
+  #     - monitoring_internal
+  #   restart: always
+  #   volumes:
+  #     - /data/loki:/data/loki
+  #     - /opt/docker/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+  #   healthcheck:
+  #     test: wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1
+  #     interval: 5s
+  #     timeout: 10s
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.loki.rule=Host(`${HOST_IP}`)"
+  #     - "traefik.http.routers.loki.entrypoints=loki"
+  #     - "traefik.http.routers.loki.tls=false"
+  #     - "traefik.http.routers.loki.service=loki"
+  #     - "traefik.http.services.loki.loadbalancer.server.port=3100"
+  #   cpus: 2
+  #   mem_limit: 512m
+  #   mem_reservation: 128m
+  #   #<<: *logging
 
-  mikrotik_exporter:
-    image: hatamiarash7/mikrotik-exporter
-    networks:
-      - monitoring_internal
-    environment:
-      - CONFIG_FILE=/etc/mikrotik-exporter/config.yml
-    configs:
-      - source: mikrotik_config
-        target: /etc/mikrotik-exporter/config.yml
-    restart: always
-    # healthcheck:
-    #   test: netstat -an | grep 9116 > /dev/null; if [ 0 != $$? ]; then exit 1; fi;
-    #   interval: 5s
-    #   timeout: 10s
-    depends_on:
-      prometheus:
-        condition: service_healthy
-    cpus: 1
-    mem_limit: 512m
-    mem_reservation: 128m
-    <<: *logging
+  # mikrotik_exporter:
+  #   image: hatamiarash7/mikrotik-exporter
+  #   networks:
+  #     - monitoring_internal
+  #   environment:
+  #     - CONFIG_FILE=/etc/mikrotik-exporter/config.yml
+  #   configs:
+  #     - source: mikrotik_config
+  #       target: /etc/mikrotik-exporter/config.yml
+  #   restart: always
+  #   # healthcheck:
+  #   #   test: netstat -an | grep 9116 > /dev/null; if [ 0 != $$? ]; then exit 1; fi;
+  #   #   interval: 5s
+  #   #   timeout: 10s
+  #   depends_on:
+  #     prometheus:
+  #       condition: service_healthy
+  #   cpus: 1
+  #   mem_limit: 512m
+  #   mem_reservation: 128m
+  #   <<: *logging
 
   emby:
     image: ghcr.io/linuxserver/emby:4.6.7@sha256:84776ef60c8f06306274a4688c9bea3192f9c00d834a7024cca2b01a5a0bf554
@@ -771,50 +771,6 @@ services:
     mem_reservation: 128m
     <<: *logging
 
-  bitcoin:
-    image: lncm/bitcoind:v22.0@sha256:0e00667f8f084536f45ba680844b6f23a51d3101fb08d8e0ca371ee3f89bc72d
-    hostname: bitcoin.internal
-    command: -conf=/data/bitcoin.conf
-    networks:
-      - proxy
-      - bitcoin
-      - tor
-    depends_on:
-      tor:
-        condition: service_started
-      tor_socks5:
-        condition: service_started
-      proxy:
-        condition: service_healthy
-    environment:
-      ONIONSERVICE_NAME: bitcoin
-      ONIONSERVICE_PORT: 8333
-    volumes:
-      - /data_ssd/bitcoin:/data/.bitcoin
-      - /opt/docker/bitcoin/bitcoin.conf:/data/bitcoin.conf
-    restart: always
-    healthcheck:
-      test: ["CMD", "bitcoin-cli", "-getinfo"]
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.core.rule=Host(`core.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.core.entrypoints=tls"
-      - "traefik.http.routers.core.tls=true"
-      - "traefik.http.routers.core.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.core.service=bitcoin"
-      - "traefik.http.services.bitcoin.loadbalancer.server.port=8332"
-    cpus: 4
-    mem_limit: 16384m
-    mem_reservation: 4096m
-    <<: *logging
-
-  # bitcoin - electrs - https://github.com/romanz/electrs/blob/master/Dockerfile
-  # bitcoin - mempool - https://github.com/mempool/mempool/blob/master/docker/docker-compose.yml
-  # bitcoin - btcpay - https://github.com/getumbrel/umbrel/blob/master/apps/btcpay-server/docker-compose.yml - https://apotdevin.com/blog/thunderhub-btcpay
-  # matrixdotorg/synapse - https://github.com/getumbrel/umbrel/blob/master/apps/synapse/docker-compose.yml
-  # element-web - https://github.com/getumbrel/umbrel/blob/master/apps/element/docker-compose.yml
-  # lnbits - https://github.com/getumbrel/umbrel/blob/master/apps/lnbits/docker-compose.yml
-
   rss:
     image: miniflux/miniflux:2.0.35@sha256:d242a754cdd946431d9ae9ff876b8f5a838746ce934dae893cd743fee3fe967f
     networks:
@@ -885,184 +841,6 @@ services:
       test: ["CMD", "pg_isready", "-q"]
       interval: 10s
       start_period: 30s
-    cpus: 1
-    mem_limit: 512m
-    mem_reservation: 128m
-    <<: *logging
-
-  # lnd:
-  #   image: lightninglabs/lnd:v0.14.0-beta@sha256:01bcd6d90e25dd5ca35c33f5ec1291218b4d3d898263ea407466a58b04329d0e
-  #   hostname: lnd.internal
-  #   volumes:
-  #     - /data/lnd:/root/.lnd
-  #     - /opt/docker/lnd/lnd.conf:/root/.lnd/lnd.conf:ro
-  #     - /opt/docker/lnd/unlock:/data/unlock:ro
-  #   networks:
-  #     - lnd
-  #     - bitcoin
-  #     - tor
-  #     - monitoring_internal
-  #   depends_on:
-  #     bitcoin:
-  #       condition: service_healthy
-  #     tor:
-  #       condition: service_started
-  #     tor_socks5:
-  #       condition: service_started
-  #   environment:
-  #     ONIONSERVICE_NAME: lnd
-  #     ONIONSERVICE_PORT: 9735
-  #   restart: always
-  #   cpus: 2
-  #   mem_limit: 8192m
-  #   mem_reservation: 1024m
-
-  # lnd_terminal:
-  #   image: lightninglabs/lightning-terminal:v0.6.1-alpha@sha256:6a4f084eb907f5479d4e6df5b6b6eeb7fba07aac9c5fb22dd74ff6c9d80a9b85
-  #   user: "1000:1000"
-  #   volumes:
-  #     - /data/lnd_terminal:/data
-  #     - /data/lnd/data/chain/bitcoin/mainnet/admin.macaroon:/lnd/admin.macaroon:ro
-  #     - /data/lnd/tls.cert:/lnd/tls.cert:ro
-  #   depends_on:
-  #     lnd:
-  #       condition: service_started
-  #   environment:
-  #     - HOME=/data
-  #   command:
-  #     - --insecure-httplisten=0.0.0.0:3004
-  #     - --uipassword=${LND_TERMINAL_PASSWORD}
-  #     - --lnd-mode=remote
-  #     - --remote.lnd.rpcserver=lnd.internal:10009
-  #     - --remote.lnd.macaroonpath=/lnd/admin.macaroon
-  #     - --remote.lnd.tlscertpath=/lnd/tls.cert
-  #   networks:
-  #     - proxy
-  #     - lnd
-  #   restart: always
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.lnd_terminal-rtr.rule=Host(`lnd-terminal.${INTERNAL_DOMAIN}`)"
-  #     - "traefik.http.routers.lnd_terminal-rtr.entrypoints=tls"
-  #     - "traefik.http.routers.lnd_terminal-rtr.tls=true"
-  #     - "traefik.http.routers.lnd_terminal-rtr.tls.certresolver=letsencrypt"
-  #     - "traefik.http.routers.lnd_terminal-rtr.service=lnd_terminal-svc"
-  #     - "traefik.http.services.lnd_terminal-svc.loadbalancer.server.port=3004"
-  #     - "traefik.http.routers.lnd_terminal-rtr.middlewares=authelia@docker,default-headers@file"
-  #   cpus: 1
-  #   mem_limit: 512m
-  #   mem_reservation: 128m
-  #   <<: *logging
-
-  # lnd_thunderhub:
-  #   image: apotdevin/thunderhub:base-v0.12.31@sha256:990927a159f8c3ddeb6f9910e0bdd4b977900f3aa02256f0ab958f68c115e711
-  #   networks:
-  #     - proxy
-  #     - lnd
-  #     - tor
-  #   depends_on:
-  #     lnd:
-  #       condition: service_started
-  #   volumes:
-  #     - /data/lnd/data/chain/bitcoin/mainnet:/macaroons:ro
-  #     - /data/lnd/tls.cert:/certs/tls.cert:ro
-  #     - /opt/docker/thunderhub/thubConfig.yaml:/data/thubConfig.yaml:rw
-  #   environment:
-  #     - TOR_PROXY_SERVER=socks://tor_socks5.internal:9150
-  #     - LOG_LEVEL=silly
-  #     - THEME=dark
-  #     - CURRENCY=sat
-  #     - NO_VERSION_CHECK=true
-  #     - ACCOUNT_CONFIG_PATH=/data/thubConfig.yaml
-  #   restart: always
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.lnd_thunderhub-rtr.rule=Host(`lnd-hub.${INTERNAL_DOMAIN}`)"
-  #     - "traefik.http.routers.lnd_thunderhub-rtr.entrypoints=tls"
-  #     - "traefik.http.routers.lnd_thunderhub-rtr.tls=true"
-  #     - "traefik.http.routers.lnd_thunderhub-rtr.tls.certresolver=letsencrypt"
-  #     - "traefik.http.routers.lnd_thunderhub-rtr.service=lnd_thunderhub-svc"
-  #     - "traefik.http.services.lnd_thunderhub-svc.loadbalancer.server.port=3000"
-  #     - "traefik.http.middlewares.lnd_thunderhub-redirect.redirectregex.regex=https://lnd-hub.int.mxard.tech/$$"
-  #     - "traefik.http.middlewares.lnd_thunderhub-redirect.redirectregex.replacement=https://lnd-hub.int.mxard.tech/thub/login"
-  #     - "traefik.http.middlewares.lnd_thunderhub-redirect.redirectregex.permanent=true"
-  #     - "traefik.http.routers.lnd_thunderhub-rtr.middlewares=authelia@docker,default-headers@file,lnd_thunderhub-redirect@docker"
-  #   cpus: 1
-  #   mem_limit: 512m
-  #   mem_reservation: 128m
-  #   <<: *logging
-
-  # bitcoin_exporter:
-  #   image: jvstein/bitcoin-prometheus-exporter:latest
-  #   environment:
-  #     - BITCOIN_RPC_HOST=bitcoin
-  #     - BITCOIN_RPC_USER=${BITCOIN_RPC_USER}
-  #     - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD}
-  #     - REFRESH_SECONDS=1
-  #     - LOG_LEVEL=INFO
-  #   depends_on:
-  #     bitcoin:
-  #       condition: service_healthy
-  #   networks:
-  #     - bitcoin
-  #     - prometheus
-  #   restart: always
-  #   cpus: 1
-  #   mem_limit: 64m
-  #   mem_reservation: 32m
-  #   <<: *logging
-
-  # lnd-thunderhub:
-  #   image: apotdevin/thunderhub:v0.12.20
-  #   user: "1000:1000"
-  #   volumes:
-  #     - type: volume
-  #       source: nfs_lnd
-  #       target: /lnd
-  #       read_only: true
-  #     - type: volume
-  #       source: nfs_lnd_thunderhub
-  #       target: /data
-  #   environment:
-  #     - NO_VERSION_CHECK=true
-  #     - LOG_LEVEL=debug
-  #     - ACCOUNT_CONFIG_PATH=/data/thubConfig.yaml
-  #   networks:
-  #     - traefik
-  #   restart: always
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.lnd-thunderhub.rule=Host(`lnd.${INTERNAL_DOMAIN}`)"
-  #     - "traefik.http.routers.lnd-thunderhub.entrypoints=tls"
-  #     - "traefik.http.routers.lnd-thunderhub.tls=true"
-  #     - "traefik.http.routers.lnd-thunderhub.tls.certresolver=letsencrypt"
-  #     - "traefik.http.routers.lnd-thunderhub.service=lnd-thunderhub"
-  #     - "traefik.http.services.lnd-thunderhub.loadbalancer.server.port=3000"
-
-  tor:
-    build: ./tor
-    networks:
-      - tor
-      - socket_proxy
-    depends_on:
-      socket_proxy:
-        condition: service_healthy
-    volumes:
-      - /data/tor_services:/var/lib/tor/onion_services
-    environment:
-      DOCKER_HOST: "tcp://socket_proxy.internal:2375"
-    restart: always
-    cpus: 1
-    mem_limit: 512m
-    mem_reservation: 128m
-    <<: *logging
-
-  tor_socks5:
-    image: peterdavehello/tor-socks-proxy:latest@sha256:99f3348a181c9975116a9f5c766200d456f81a1ec512ba89a2a90599ffdb3f19
-    hostname: tor_socks5.internal
-    networks:
-      - tor
-    restart: always
     cpus: 1
     mem_limit: 512m
     mem_reservation: 128m
@@ -1300,39 +1078,22 @@ networks:
   dns:
     driver: bridge
     internal: true
-  prometheus:
-    driver: bridge
-    internal: true
   dashboard:
     driver: bridge
   rss:
     driver: bridge
   media_automation:
     driver: bridge
-  monitoring_internal:
-    driver: bridge
-  # deemix:
-  #   driver: bridge
-  #   internal: true
   postgres:
     driver: bridge
     internal: true
   nextcloud:
     driver: bridge
-  idp:
-    driver: bridge
   proxies:
-    driver: bridge
-  bitcoin:
-    driver: bridge
-    internal: true
-  tor:
     driver: bridge
   redis:
     driver: bridge
     internal: true
-  lnd:
-    driver: bridge
   sftp:
     driver: bridge
     internal: true
