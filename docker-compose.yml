@@ -238,7 +238,7 @@ services:
       - "traefik.tcp.routers.gitea-ssh-rtr.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.gitea-ssh-rtr.entrypoints=ssh"
       - "traefik.tcp.routers.gitea-ssh-rtr.service=gitea-ssh-svc"
-      - "traefik.tcp.services.gitea-ssh-svc.loadbalancer.server.port=22"
+      - "traefik.tcp.services.gitea-ssh-svc.loadbalancer.server.port=2222"
     cpus: 2
     mem_limit: 2048m
     mem_reservation: 256m
