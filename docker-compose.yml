@@ -1,10 +1,10 @@
 version: '3.8'
 
-x-logging: &logging
-  logging:
-    driver: loki
-    options:
-      loki-url: "http://${LOKI_URL}:3100/loki/api/v1/push"
+# x-logging: &logging
+#   logging:
+#     driver: loki
+#     options:
+#       loki-url: "http://${LOKI_URL}:3100/loki/api/v1/push"
 
 # x-security: &security
 #   security_opt:
@@ -158,11 +158,8 @@ services:
     depends_on:
       proxy:
         condition: service_healthy
-    configs:
-      - source: rente_index
-        target: /usr/share/nginx/html/index.html
-      - source: rente_nginx
-        target: /etc/nginx/nginx.conf
+    volumes:
+      - ./rente/nginx.conf:/etc/nginx/nginx.conf
     healthcheck:
       test: curl -fSs http://127.0.0.1:80 || exit 1
       interval: 5s
@@ -180,7 +177,7 @@ services:
       - "traefik.http.routers.rente-rtr.service=rente-svc"
       - "traefik.http.services.rente-svc.loadbalancer.server.port=80"
       - "traefik.http.routers.rente-rtr.middlewares=authelia@docker,default-headers@file"
-    <<: *logging
+    # <<: *logging
 
   proxy:
     image: traefik:v2.6.2@sha256:b8ca739c8361611a964dfa5f023750de17f34e342997c50dbdfb5a38e3450edd
@@ -284,7 +281,7 @@ services:
     cpus: 2
     mem_limit: 512m
     mem_reservation: 128m
-    <<: *logging
+    # <<: *logging
 
   ldap_proxy:
     build: ./stunnel
@@ -303,7 +300,7 @@ services:
     cpus: 1
     mem_limit: 64m
     mem_reservation: 32m
-    <<: *logging
+    # <<: *logging
 
   dns:
     image: spx01/blocky
@@ -418,7 +415,7 @@ services:
     cpus: 18
     mem_limit: 8192m
     mem_reservation: 512m
-    <<: *logging
+    # <<: *logging
  
   sonarr:
     image: ghcr.io/linuxserver/sonarr:3.0.7@sha256:d055e6a69617b1604d30c12bbaa48ae3ccb12108ba9c1155808acacfe760634e
@@ -561,7 +558,7 @@ services:
     cpus: 1
     mem_limit: 512m
     mem_reservation: 128m
-    <<: *logging
+    # <<: *logging
 
   rss:
     image: miniflux/miniflux:2.0.35@sha256:d242a754cdd946431d9ae9ff876b8f5a838746ce934dae893cd743fee3fe967f
@@ -596,7 +593,7 @@ services:
     cpus: 2
     mem_limit: 512m
     mem_reservation: 128m
-    <<: *logging
+    # <<: *logging
 
   postgres_rss:
     image: postgres:alpine3.15@sha256:b7ffee5fd914008b41f265c76248586e78b52ef77b3a5c2ac48393633831f7fb
@@ -616,7 +613,7 @@ services:
     cpus: 1
     mem_limit: 512m
     mem_reservation: 64m
-    <<: *logging
+    # <<: *logging
   
 
   # deemix:
@@ -668,7 +665,7 @@ services:
     cpus: 1
     mem_limit: 512m
     mem_reservation: 64m
-    <<: *logging
+    # <<: *logging
 
   redis:
     image: redis:alpine3.15@sha256:32f8cf4bf6412626b21273fed376182b6786b75182e4a19f90f3f57d01362fbb
@@ -681,7 +678,7 @@ services:
     cpus: 1
     mem_limit: 128m
     mem_reservation: 32m
-    <<: *logging
+    # <<: *logging
 
   nextcloud:
     image: nextcloud:23.0
@@ -741,7 +738,7 @@ services:
     cpus: 6
     mem_limit: 4096m
     mem_reservation: 1024m
-    <<: *logging
+    # <<: *logging
 
   # nextcloud_exporter:
   #   image: xperimental/nextcloud-exporter
