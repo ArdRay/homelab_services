@@ -1,0 +1,356 @@
+version: '3.8' 
+
+x-logging: &logging
+  logging:
+    driver: loki
+    options:
+      loki-url: "http://${HOST_IP}:3100/loki/api/v1/push"
+
+services:
+  proxy:
+    image: traefik:${TRAEFIK_VERSION:-v2.6.3@sha256:a1219f2ba73f764ee9c550f3c13045a9264c6b78bdd0b0db6e956a7f96972f48}
+    command:
+      - "--providers.docker.endpoint=tcp://socket_proxy.internal:2375"
+      - "--providers.docker.swarmMode=false"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=t2_proxy"
+      - "--providers.file.directory=/config"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=tls"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.tls.address=:443"
+      - "--entrypoints.ping.address=:8082"
+      - "--api=true"
+      - "--api.dashboard=true"
+      - "--api.debug=true"
+      - "--log.level=WARN"
+      - "--ping.entrypoint=ping"
+      - "--metrics.prometheus=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.provider=cloudflare"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=1.1.1.1:53"
+      - "--certificatesresolvers.letsencrypt.acme.dnschallenge.delayBeforeCheck=0"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      socket_proxy:
+        condition: service_healthy
+    ports:
+      - target: 80
+        published: 80
+        protocol: tcp
+        mode: host
+      - target: 443
+        published: 443
+        protocol: tcp
+        mode: host
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8082/ping || exit 1
+      interval: 5s
+      timeout: 10s
+    volumes:
+      - ./proxy/tls:/letsencrypt
+      - ./proxy/tls_options.yml:/config/tls_options.yml:ro
+      - ./proxy/default_headers.yml:/config/default_headers.yml:ro
+    networks:
+      - proxy
+      - socket_proxy
+    environment:
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
+      #HTTP_PROXY: http://http_proxy.internal:3128
+      #HTTPS_PROXY: http://http_proxy.internal:3128
+      #NO_PROXY: "socket_proxy.internal,*.internal,,127.0.0.1,localhost"
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.traefik_dash.loadbalancer.server.port=8080"
+      - "traefik.http.routers.traefik_dash.rule=Host(`services.${INTERNAL_DOMAIN}`) && PathPrefix(`/dashboard`, `/api`)"
+      - "traefik.http.routers.traefik_dash.entrypoints=tls"
+      - "traefik.http.routers.traefik_dash.tls=true"
+      - "traefik.http.routers.traefik_dash.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik_dash.service=api@internal"
+    cpus: 2
+    mem_limit: 512m
+    mem_reservation: 128m
+
+
+  socket_proxy:
+    image: fluencelabs/docker-socket-proxy${SOCKET_PROXY_VERSION:-@sha256:1a0645aff1364aa8047046f8bf7b3aee061fa6dc2765073bee70bb51eccec5df}
+    hostname: socket_proxy.internal
+    restart: always
+    networks:
+      - socket_proxy
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    environment:
+      - LOG_LEVEL=info # debug,info,notice,warning,err,crit,alert,emerg
+      ## Granted by Default
+      - EVENTS=1
+      - PING=1
+      - VERSION=1
+      ## Revoked by Default
+      # Security critical
+      - AUTH=0
+      - SECRETS=0
+      - POST=0 # Watchtower
+      - DELETE=0 # Watchtower
+        # GET Optons
+      - BUILD=0
+      - COMMIT=0
+      - CONFIGS=0
+      - CONTAINERS=1 # Traefik, portainer, etc.
+      - DISTRIBUTION=0
+      - EXEC=0
+      - IMAGES=0 # Portainer, Watchtower
+      - INFO=0 # Portainer
+      - NETWORKS=0 # Portainer, Watchtower
+      - NODES=0
+      - PLUGINS=0
+      - SERVICES=0 # Portainer
+      - SESSION=0
+      - SWARM=0
+      - SYSTEM=0
+      - TASKS=0 # Portaienr
+      - VOLUMES=0 # Portainer
+      # POST Options
+      - CONTAINERS_CREATE=0 # WatchTower
+      - CONTAINERS_START=0 # WatchTower
+      - CONTAINERS_UPDATE=0 # WatchTower
+      # DELETE Options
+      - CONTAINERS_DELETE=0 # WatchTower
+      - IMAGES_DELETE=0 # WatchTower
+    healthcheck:
+      test: netstat -an | grep 2375 > /dev/null; if [ 0 != $$? ]; then exit 1; fi;
+      interval: 5s
+      timeout: 10s
+    cpus: 0.5
+    mem_limit: 64m
+    mem_reservation: 32m
+
+  bitcoin:
+    image: lncm/bitcoind:{BITCOIND_VERSION:-v22.0@sha256:0e00667f8f084536f45ba680844b6f23a51d3101fb08d8e0ca371ee3f89bc72d}
+    hostname: bitcoin.internal
+    command: -conf=/data/bitcoin.conf
+    networks:
+      - proxy
+      - bitcoin
+      - tor
+    depends_on:
+      tor:
+        condition: service_started
+      tor_socks5:
+        condition: service_started
+      proxy:
+        condition: service_healthy
+    environment:
+      ONIONSERVICE_NAME: bitcoin
+      ONIONSERVICE_PORT: 8333
+    volumes:
+      - /data_ssd/bitcoin:/data/.bitcoin
+      - ./bitcoin/bitcoin.conf:/data/bitcoin.conf
+    restart: always
+    healthcheck:
+      test: ["CMD", "bitcoin-cli", "-getinfo"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.core.rule=Host(`core.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.core.entrypoints=tls"
+      - "traefik.http.routers.core.tls=true"
+      - "traefik.http.routers.core.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.core.service=bitcoin"
+      - "traefik.http.services.bitcoin.loadbalancer.server.port=8332"
+    cpus: 4
+    mem_limit: 16384m
+    mem_reservation: 4096m
+
+  # lnd:
+  #   image: lightninglabs/lnd:v0.14.0-beta@sha256:01bcd6d90e25dd5ca35c33f5ec1291218b4d3d898263ea407466a58b04329d0e
+  #   hostname: lnd.internal
+  #   volumes:
+  #     - /data/lnd:/root/.lnd
+  #     - /opt/docker/lnd/lnd.conf:/root/.lnd/lnd.conf:ro
+  #     - /opt/docker/lnd/unlock:/data/unlock:ro
+  #   networks:
+  #     - lnd
+  #     - bitcoin
+  #     - tor
+  #     - monitoring_internal
+  #   depends_on:
+  #     bitcoin:
+  #       condition: service_healthy
+  #     tor:
+  #       condition: service_started
+  #     tor_socks5:
+  #       condition: service_started
+  #   environment:
+  #     ONIONSERVICE_NAME: lnd
+  #     ONIONSERVICE_PORT: 9735
+  #   restart: always
+  #   cpus: 2
+  #   mem_limit: 8192m
+  #   mem_reservation: 1024m
+
+  # lnd_terminal:
+  #   image: lightninglabs/lightning-terminal:v0.6.1-alpha@sha256:6a4f084eb907f5479d4e6df5b6b6eeb7fba07aac9c5fb22dd74ff6c9d80a9b85
+  #   user: "1000:1000"
+  #   volumes:
+  #     - /data/lnd_terminal:/data
+  #     - /data/lnd/data/chain/bitcoin/mainnet/admin.macaroon:/lnd/admin.macaroon:ro
+  #     - /data/lnd/tls.cert:/lnd/tls.cert:ro
+  #   depends_on:
+  #     lnd:
+  #       condition: service_started
+  #   environment:
+  #     - HOME=/data
+  #   command:
+  #     - --insecure-httplisten=0.0.0.0:3004
+  #     - --uipassword=${LND_TERMINAL_PASSWORD}
+  #     - --lnd-mode=remote
+  #     - --remote.lnd.rpcserver=lnd.internal:10009
+  #     - --remote.lnd.macaroonpath=/lnd/admin.macaroon
+  #     - --remote.lnd.tlscertpath=/lnd/tls.cert
+  #   networks:
+  #     - proxy
+  #     - lnd
+  #   restart: always
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.lnd_terminal-rtr.rule=Host(`lnd-terminal.${INTERNAL_DOMAIN}`)"
+  #     - "traefik.http.routers.lnd_terminal-rtr.entrypoints=tls"
+  #     - "traefik.http.routers.lnd_terminal-rtr.tls=true"
+  #     - "traefik.http.routers.lnd_terminal-rtr.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.lnd_terminal-rtr.service=lnd_terminal-svc"
+  #     - "traefik.http.services.lnd_terminal-svc.loadbalancer.server.port=3004"
+  #     - "traefik.http.routers.lnd_terminal-rtr.middlewares=authelia@docker,default-headers@file"
+  #   cpus: 1
+  #   mem_limit: 512m
+  #   mem_reservation: 128m
+  #   <<: *logging
+
+  # lnd_thunderhub:
+  #   image: apotdevin/thunderhub:base-v0.12.31@sha256:990927a159f8c3ddeb6f9910e0bdd4b977900f3aa02256f0ab958f68c115e711
+  #   networks:
+  #     - proxy
+  #     - lnd
+  #     - tor
+  #   depends_on:
+  #     lnd:
+  #       condition: service_started
+  #   volumes:
+  #     - /data/lnd/data/chain/bitcoin/mainnet:/macaroons:ro
+  #     - /data/lnd/tls.cert:/certs/tls.cert:ro
+  #     - /opt/docker/thunderhub/thubConfig.yaml:/data/thubConfig.yaml:rw
+  #   environment:
+  #     - TOR_PROXY_SERVER=socks://tor_socks5.internal:9150
+  #     - LOG_LEVEL=silly
+  #     - THEME=dark
+  #     - CURRENCY=sat
+  #     - NO_VERSION_CHECK=true
+  #     - ACCOUNT_CONFIG_PATH=/data/thubConfig.yaml
+  #   restart: always
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.lnd_thunderhub-rtr.rule=Host(`lnd-hub.${INTERNAL_DOMAIN}`)"
+  #     - "traefik.http.routers.lnd_thunderhub-rtr.entrypoints=tls"
+  #     - "traefik.http.routers.lnd_thunderhub-rtr.tls=true"
+  #     - "traefik.http.routers.lnd_thunderhub-rtr.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.lnd_thunderhub-rtr.service=lnd_thunderhub-svc"
+  #     - "traefik.http.services.lnd_thunderhub-svc.loadbalancer.server.port=3000"
+  #     - "traefik.http.middlewares.lnd_thunderhub-redirect.redirectregex.regex=https://lnd-hub.int.mxard.tech/$$"
+  #     - "traefik.http.middlewares.lnd_thunderhub-redirect.redirectregex.replacement=https://lnd-hub.int.mxard.tech/thub/login"
+  #     - "traefik.http.middlewares.lnd_thunderhub-redirect.redirectregex.permanent=true"
+  #     - "traefik.http.routers.lnd_thunderhub-rtr.middlewares=authelia@docker,default-headers@file,lnd_thunderhub-redirect@docker"
+  #   cpus: 1
+  #   mem_limit: 512m
+  #   mem_reservation: 128m
+  #   <<: *logging
+
+  # bitcoin_exporter:
+  #   image: jvstein/bitcoin-prometheus-exporter:latest
+  #   environment:
+  #     - BITCOIN_RPC_HOST=bitcoin
+  #     - BITCOIN_RPC_USER=${BITCOIN_RPC_USER}
+  #     - BITCOIN_RPC_PASSWORD=${BITCOIN_RPC_PASSWORD}
+  #     - REFRESH_SECONDS=1
+  #     - LOG_LEVEL=INFO
+  #   depends_on:
+  #     bitcoin:
+  #       condition: service_healthy
+  #   networks:
+  #     - bitcoin
+  #     - prometheus
+  #   restart: always
+  #   cpus: 1
+  #   mem_limit: 64m
+  #   mem_reservation: 32m
+  #   <<: *logging
+
+  # lnd-thunderhub:
+  #   image: apotdevin/thunderhub:v0.12.20
+  #   user: "1000:1000"
+  #   volumes:
+  #     - type: volume
+  #       source: nfs_lnd
+  #       target: /lnd
+  #       read_only: true
+  #     - type: volume
+  #       source: nfs_lnd_thunderhub
+  #       target: /data
+  #   environment:
+  #     - NO_VERSION_CHECK=true
+  #     - LOG_LEVEL=debug
+  #     - ACCOUNT_CONFIG_PATH=/data/thubConfig.yaml
+  #   networks:
+  #     - traefik
+  #   restart: always
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.lnd-thunderhub.rule=Host(`lnd.${INTERNAL_DOMAIN}`)"
+  #     - "traefik.http.routers.lnd-thunderhub.entrypoints=tls"
+  #     - "traefik.http.routers.lnd-thunderhub.tls=true"
+  #     - "traefik.http.routers.lnd-thunderhub.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.lnd-thunderhub.service=lnd-thunderhub"
+  #     - "traefik.http.services.lnd-thunderhub.loadbalancer.server.port=3000"
+
+  tor:
+    build: ./tor
+    networks:
+      - tor
+      - socket_proxy
+    depends_on:
+      socket_proxy:
+        condition: service_healthy
+    volumes:
+      - ./tor_services:/var/lib/tor/onion_services
+    environment:
+      DOCKER_HOST: "tcp://socket_proxy.internal:2375"
+    restart: always
+    cpus: 1
+    mem_limit: 512m
+    mem_reservation: 128m
+    <<: *logging
+
+  tor_socks5:
+    image: peterdavehello/tor-socks-proxy:{TOR_SOCKS_VERSION:-latest@sha256:a4c9f941d06f29ed71620fad082f875f3bd4ed7f7dec291e0ee790245863487c}
+    hostname: tor_socks5.internal
+    networks:
+      - tor
+    restart: always
+    cpus: 1
+    mem_limit: 512m
+    mem_reservation: 128m
+    <<: *logging
+
+networks:
+  proxy:
+    external: true
+    name: t2_proxy
+  bitcoin:
+    driver: bridge
+    internal: true
+  tor:
+    driver: bridge
