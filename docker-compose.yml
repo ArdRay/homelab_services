@@ -837,7 +837,6 @@ networks:
     driver: bridge
   dns:
     driver: bridge
-    internal: true
   dashboard:
     driver: bridge
   rss:
