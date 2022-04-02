@@ -505,9 +505,9 @@ services:
       timeout: 10s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.loki.rule=Host(`${HOST_IP}`)"
+      - "traefik.http.routers.loki.rule=Host(`loki.${INTERNAL_DOMAIN}`)"
       - "traefik.http.routers.loki.entrypoints=loki"
-      - "traefik.http.routers.loki.tls=false"
+      - "traefik.http.routers.loki.tls=true"
       - "traefik.http.routers.loki.service=loki"
       - "traefik.http.services.loki.loadbalancer.server.port=3100"
     cpus: 2
