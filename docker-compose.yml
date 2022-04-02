@@ -4,7 +4,7 @@ x-logging: &logging
   logging:
     driver: loki
     options:
-      loki-url: "{LOKI_URL}"
+      loki-url: "${LOKI_URL}"
 
 services:
   proxy:
@@ -132,7 +132,7 @@ services:
     mem_reservation: 32m
 
   bitcoin:
-    image: lncm/bitcoind:{BITCOIND_VERSION:-v22.0@sha256:0e00667f8f084536f45ba680844b6f23a51d3101fb08d8e0ca371ee3f89bc72d}
+    image: lncm/bitcoind:${BITCOIND_VERSION:-v22.0@sha256:0e00667f8f084536f45ba680844b6f23a51d3101fb08d8e0ca371ee3f89bc72d}
     hostname: bitcoin.internal
     command: -conf=/data/bitcoin.conf
     networks:
@@ -335,7 +335,7 @@ services:
     <<: *logging
 
   tor_socks5:
-    image: peterdavehello/tor-socks-proxy:{TOR_SOCKS_VERSION:-latest@sha256:a4c9f941d06f29ed71620fad082f875f3bd4ed7f7dec291e0ee790245863487c}
+    image: peterdavehello/tor-socks-proxy:${TOR_SOCKS_VERSION:-latest@sha256:a4c9f941d06f29ed71620fad082f875f3bd4ed7f7dec291e0ee790245863487c}
     hostname: tor_socks5.internal
     networks:
       - tor
