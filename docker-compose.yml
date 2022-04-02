@@ -233,7 +233,6 @@ services:
       - "traefik.http.routers.gitea-rtr.middlewares=default-headers@file"
       - "traefik.tcp.routers.gitea-ssh-rtr.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.gitea-ssh-rtr.entrypoints=ssh"
-      - "traefik.tcp.routers.gitea-ssh-rtr.tls=false"
       - "traefik.tcp.routers.gitea-ssh-rtr.service=gitea-ssh-svc"
       - "traefik.tcp.services.gitea-ssh-svc.loadbalancer.server.port=22"
     cpus: 2
