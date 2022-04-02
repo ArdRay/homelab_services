@@ -4,7 +4,7 @@ x-logging: &logging
   logging:
     driver: loki
     options:
-      loki-url: "http://${HOST_IP}:3100/loki/api/v1/push"
+      loki-url: "http://${LOKI_URL}:3100/loki/api/v1/push"
 
 # x-security: &security
 #   security_opt:
@@ -265,8 +265,7 @@ services:
       - dashboard
       - nextcloud
     environment:
-      CF_API_EMAIL: ${CF_API_EMAIL}
-      CF_API_KEY: ${CF_API_KEY}
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
       #HTTP_PROXY: http://http_proxy.internal:3128
       #HTTPS_PROXY: http://http_proxy.internal:3128
       #NO_PROXY: "socket_proxy.internal,*.internal,,127.0.0.1,localhost"
@@ -279,38 +278,12 @@ services:
       - "traefik.http.routers.traefik_dash.tls=true"
       - "traefik.http.routers.traefik_dash.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik_dash.service=api@internal"
+      - 'traefik.http.middlewares.authelia.forwardauth.address=http://idp.${INTERNAL_DOMAIN}/api/verify?rd=https://idp.${INTERNAL_DOMAIN}/'
+      - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
+      - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
     cpus: 2
     mem_limit: 512m
     mem_reservation: 128m
-    <<: *logging
-
-  authelia:
-    image: authelia/authelia
-    hostname: authelia.internal
-    volumes:
-      - /opt/docker/authelia/configuration.yml:/config/configuration.yml
-    depends_on:
-      postgres_authelia:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    networks:
-      - proxy
-      - idp
-      - redis
-      - proxies
-    labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.authelia.rule=Host(`idp.${INTERNAL_DOMAIN}`)'
-      - 'traefik.http.routers.authelia.entrypoints=tls'
-      - 'traefik.http.routers.authelia.tls=true'
-      - 'traefik.http.middlewares.authelia.forwardauth.address=http://authelia.internal:9091/api/verify?rd=https://idp.${INTERNAL_DOMAIN}/'
-      - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
-      - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
-      - "traefik.http.routers.authelia.middlewares=default-headers@file"
-    cpus: 2
-    mem_limit: 256m
-    mem_reservation: 64m
     <<: *logging
 
   ldap_proxy:
@@ -331,73 +304,6 @@ services:
     mem_limit: 64m
     mem_reservation: 32m
     <<: *logging
-
-  # http_proxy:
-  #   image: ubuntu/squid:4.13-21.10_edge
-  #   hostname: http_proxy.internal
-  #   networks:
-  #     - proxies
-  #   volumes:
-  #     - /opt/docker/squid/squid.conf:/etc/squid/squid.conf
-  #   environment:
-  #     HTTP_PROXY: http://http_proxy.internal:3128
-  #     HTTPS_PROXY: http://http_proxy.internal:3128
-  #     NO_PROXY: "*.internal,192.168.0.0/16,127.0.0.1,localhost"
-  #   restart: unless-stopped
-  #   cpus: 1
-  #   mem_limit: 512m
-  #   mem_reservation: 256m
-  #   <<: *logging
-
-  # http_proxy_exporter:
-  #   image: boynux/squid-exporter
-  #   hostname: http_proxy_exporter.internal
-  #   networks:
-  #     - proxies
-  #     - monitoring_internal
-  #   depends_on:
-  #     http_proxy:
-  #       condition: service_started
-  #     prometheus:
-  #       condition: service_healthy
-  #   environment:
-  #     SQUID_HOSTNAME: http_proxy.internal
-  #     SQUID_PORT: 3128
-  #     SQUID_EXPORTER_LISTEN: :9301
-  #     HTTP_PROXY: http://http_proxy.internal:3128
-  #     HTTPS_PROXY: http://http_proxy.internal:3128
-  #     NO_PROXY: "*.internal,192.168.0.0/16,127.0.0.1,localhost"
-  #   restart: unless-stopped
-  #   cpus: 1
-  #   mem_limit: 128m
-  #   mem_reservation: 64m
-  #   <<: *logging
-
-  # hello:
-  #   image: kerwood/hello-world
-  #   restart: unless-stopped
-  #   networks:
-  #     - proxy
-  #    #- idp
-  #   depends_on:
-  #     proxy:
-  #       condition: service_healthy
-  #   healthcheck:
-  #     test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
-  #     interval: 5s
-  #     timeout: 10s
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.hello.rule=Host(`hello.${INTERNAL_DOMAIN}`)"
-  #     - "traefik.http.routers.hello.entrypoints=tls"
-  #     - "traefik.http.routers.hello.tls=true"
-  #     - "traefik.http.routers.hello.tls.certresolver=letsencrypt"
-  #     - "traefik.http.routers.hello.service=hello"
-  #     - "traefik.http.services.hello.loadbalancer.server.port=3000"
-  #    #- "traefik.http.routers.hello.middlewares=authelia@docker"
-  #   cpus: 1
-  #   mem_limit: 128m
-  #   mem_reservation: 32m
 
   dns:
     image: spx01/blocky
@@ -426,44 +332,6 @@ services:
     mem_reservation: 64m
     #<<: *logging
 
-  # prometheus:
-  #   image: prom/prometheus:latest
-  #   user: "65534:65534"
-  #   networks:
-  #     - prometheus
-  #     - monitoring_internal
-  #   depends_on:
-  #     proxy:
-  #       condition: service_healthy
-  #   command:
-  #     - '--config.file=/etc/prometheus/prometheus.yml'
-  #     - '--storage.tsdb.path=/prometheus'
-  #     - '--storage.tsdb.retention.time=120d'
-  #   volumes:
-  #     - /data/prometheus:/prometheus
-  #     - /opt/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-  #   environment:
-  #     - TZ=Europe/Berlin
-  #   healthcheck:
-  #     test: wget --no-verbose --tries=1 --spider http://localhost:9090 || exit 1
-  #     interval: 15s
-  #     timeout: 10s
-  #     start_period: 60s
-  #   restart: always
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.prometheus-rtr.rule=Host(`prometheus.${INTERNAL_DOMAIN}`)"
-  #     - "traefik.http.routers.prometheus-rtr.entrypoints=tls"
-  #     - "traefik.http.routers.prometheus-rtr.tls=true"
-  #     - "traefik.http.routers.prometheus-rtr.tls.certresolver=letsencrypt"
-  #     - "traefik.http.routers.prometheus-rtr.service=prometheus-svc"
-  #     - "traefik.http.services.prometheus-svc.loadbalancer.server.port=9090"
-  #     - "traefik.http.routers.prometheus-rtr.middlewares=authelia@docker,default-headers@file"
-  #   cpus: 1
-  #   mem_limit: 1024m
-  #   mem_reservation: 256m
-  #   #<<: *logging
-    
   cadvisor:
     image: google/cadvisor:latest
     networks:
@@ -488,82 +356,6 @@ services:
     mem_limit: 1024m
     mem_reservation: 256m
     #<<: *logging
-
-  # grafana:
-  #   image: grafana/grafana-oss:8.3.3@sha256:3c22852b378a4ca095ad966e655ed5c403f8182f8b59559580be3d698d6aa56a
-  #   user: 472:0
-  #   networks:
-  #     - proxy
-  #     - monitoring_internal
-  #     - proxies
-  #   depends_on:
-  #     proxy:
-  #       condition: service_healthy
-  #     prometheus:
-  #       condition: service_healthy
-  #     ldap_proxy:
-  #       condition: service_started  
-  #   volumes:
-  #     - /data/grafana/data:/var/lib/grafana
-  #     - /data/grafana/provision:/etc/grafana/provisioning
-  #     - /opt/docker/grafana/ldap.toml:/config/ldap.toml:ro
-  #   environment:
-  #     - GF_ANALYTICS_REPORTING_ENABLED=false
-  #     - GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION=false
-  #     - GF_ADMIN_USER=${GRAFANA_USER}
-  #     - GF_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
-  #     - GF_USERS_ALLOW_SIGN_UP=false
-  #     - GF_AUTH_ANONYMOUS_ORG_NAME=Homelab
-  #     - GF_AUTH_ANONYMOUS_HIDE_VERSION=true
-  #     - GF_AUTH_LDAP_ENABLED=true
-  #     - GF_AUTH_LDAP_CONFIG_FILE=/config/ldap.toml
-  #     - GF_LOG_LEVEL=warn
-  #     - GF_PANELS_DISABLE_SANITIZE_HTML=true
-  #     - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel,grafana-simple-json-datasource
-  #     - GF_PLUGINS_APP_TLS_SKIP_VERIFY_INSECURE=true
-  #   healthcheck:
-  #     test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
-  #     interval: 5s
-  #     timeout: 10s
-  #   restart: always
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.grafana.rule=Host(`grafana.${INTERNAL_DOMAIN}`)"
-  #     - "traefik.http.routers.grafana.entrypoints=tls"
-  #     - "traefik.http.routers.grafana.tls=true"
-  #     - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
-  #     - "traefik.http.routers.grafana.service=grafana"
-  #     - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-  #     - "traefik.http.routers.grafana.middlewares=authelia@docker,default-headers@file"
-  #   cpus: 2
-  #   mem_limit: 512m
-  #   mem_reservation: 128m
-  #   <<: *logging
-
-  # loki:
-  #   image: grafana/loki:2.3.0
-  #   command: -config.file=/etc/loki/loki-config.yaml
-  #   networks:
-  #     - monitoring_internal
-  #   restart: always
-  #   volumes:
-  #     - /data/loki:/data/loki
-  #     - /opt/docker/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
-  #   healthcheck:
-  #     test: wget --no-verbose --tries=1 --spider http://localhost:3100/ready || exit 1
-  #     interval: 5s
-  #     timeout: 10s
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.loki.rule=Host(`${HOST_IP}`)"
-  #     - "traefik.http.routers.loki.entrypoints=loki"
-  #     - "traefik.http.routers.loki.tls=false"
-  #     - "traefik.http.routers.loki.service=loki"
-  #     - "traefik.http.services.loki.loadbalancer.server.port=3100"
-  #   cpus: 2
-  #   mem_limit: 512m
-  #   mem_reservation: 128m
-  #   #<<: *logging
 
   # mikrotik_exporter:
   #   image: hatamiarash7/mikrotik-exporter
@@ -826,25 +618,6 @@ services:
     mem_reservation: 64m
     <<: *logging
   
-  postgres_authelia:
-    image: postgres:alpine3.15@sha256:b7ffee5fd914008b41f265c76248586e78b52ef77b3a5c2ac48393633831f7fb
-    restart: always
-    networks:
-      - idp
-    volumes:
-      - /data/postgres_authelia:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=authelia
-      - POSTGRES_USER=${POSTGRES_AUTHELIA_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_AUTHELIA_PASSWORD}
-    healthcheck:
-      test: ["CMD", "pg_isready", "-q"]
-      interval: 10s
-      start_period: 30s
-    cpus: 1
-    mem_limit: 512m
-    mem_reservation: 128m
-    <<: *logging
 
   # deemix:
   #   image: registry.gitlab.com/bockiii/deemix-docker
