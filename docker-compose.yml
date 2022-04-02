@@ -106,7 +106,7 @@ services:
       - DISTRIBUTION=0
       - EXEC=0
       - IMAGES=0 # Portainer, Watchtower
-      - INFO=0 # Portainer
+      - INFO=1 # Portainer
       - NETWORKS=0 # Portainer, Watchtower
       - NODES=0
       - PLUGINS=0
