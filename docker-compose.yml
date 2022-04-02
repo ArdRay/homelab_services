@@ -59,7 +59,7 @@ services:
         published: 3100
         protocol: tcp
         mode: host
-      - target: 22
+      - target: 2222
         published: 2222
         protocol: tcp
         mode: host
@@ -201,7 +201,7 @@ services:
       - GITEA__server__START_SSH_SERVER=true
       - GITEA__server__SSH_USER=gitea-ssh
       - GITEA__server__SSH_LISTEN_HOST=${HOST_IP}
-      - GITEA__server__SSH_LISTEN_PORT=22
+      - GITEA__server__SSH_LISTEN_PORT=2222
       - GITEA__admin__DISABLE_REGULAR_ORG_CREATION=true
       - GITEA__service__DISABLE_REGISTRATION=true
       - GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES=192.168.0.0/16
