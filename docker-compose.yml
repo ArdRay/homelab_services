@@ -149,7 +149,7 @@ services:
     cpus: 3
     mem_limit: 4096m
     mem_reservation: 512m
-    <<: *logging
+    #<<: *logging
 
   rente:
     image: nginx:alpine
