@@ -66,7 +66,6 @@ services:
 
   flared:
     image: ghcr.io/flaresolverr/flaresolverr:latest@sha256:cff2167146ba15bf00b1a1ddc142dd8b06a1a93c6addba369eccff5b8da81492
-    hostname: flared.internal
     network_mode: service:vpn
     environment:
       - LOG_LEVEL=info
@@ -90,7 +89,7 @@ services:
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
       - VPN_SERVICE_PROVIDER=protonvpn
-      - SERVER_NAME=HK#1,GE#1,KR#5,RU#13
+      - SERVER_NAME=HK#1,GE#1,KR#5,BG#1,FR#54
       - OPENVPN_IPV6=off
       - DOT=off
       - SHADOWSOCKS=off
@@ -256,9 +255,7 @@ services:
       - rente
       - vpn
       - rss
-      - prometheus
       - media_automation
-      - monitoring_internal
       - dashboard
       - nextcloud
     environment:
@@ -306,7 +303,6 @@ services:
     image: spx01/blocky
     networks:
       - dns
-      - monitoring_internal
     depends_on:
       proxy:
         condition: service_healthy
@@ -329,29 +325,29 @@ services:
     mem_reservation: 64m
     #<<: *logging
 
-  cadvisor:
-    image: google/cadvisor:latest
-    networks:
-      - monitoring_internal
-    depends_on:
-      prometheus:
-        condition: service_healthy
-    restart: always
-    environment:
-      - DOCKER_HOST=tcp://socket_proxy.internal:2375
-    volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /etc/timezone:/etc/timezone:ro
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:8080 || exit 1
-      interval: 5s
-      timeout: 10s
-    cpus: 2
-    mem_limit: 1024m
-    mem_reservation: 256m
+  # cadvisor:
+  #   image: google/cadvisor:latest
+  #   networks:
+  #     - monitoring_internal
+  #   depends_on:
+  #     prometheus:
+  #       condition: service_healthy
+  #   restart: always
+  #   environment:
+  #     - DOCKER_HOST=tcp://socket_proxy.internal:2375
+  #   volumes:
+  #     - /etc/localtime:/etc/localtime:ro
+  #     - /etc/timezone:/etc/timezone:ro
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:rw
+  #     - /sys:/sys:ro
+  #   healthcheck:
+  #     test: wget --no-verbose --tries=1 --spider http://localhost:8080 || exit 1
+  #     interval: 5s
+  #     timeout: 10s
+  #   cpus: 2
+  #   mem_limit: 1024m
+  #   mem_reservation: 256m
     #<<: *logging
 
   # mikrotik_exporter:
