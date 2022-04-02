@@ -89,7 +89,7 @@ services:
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
       - VPN_SERVICE_PROVIDER=protonvpn
-      - SERVER_NAMES=HK#1,GE#1,KR#5,BG#1,FR#54
+      - SERVER_NAMES=HK#1,GE#1,BG#1,FR#54
       - OPENVPN_IPV6=off
       - DOT=off
       - SHADOWSOCKS=off
@@ -301,7 +301,7 @@ services:
       proxy:
         condition: service_healthy
     volumes:
-      - /data/blockyconfig.yml:/app/config.yml:ro
+      - ./dns/config.yml:/app/config.yml:ro
     environment:
       - TZ=Europe/Berlin
     restart: always
