@@ -87,7 +87,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.traefik_dash.loadbalancer.server.port=8080"
-      - "traefik.http.routers.traefik_dash.rule=Host(`services.${INTERNAL_DOMAIN}`) && PathPrefix(`/dashboard`, `/api`)"
+      - "traefik.http.routers.traefik_dash.rule=Host(`proxy-srv.${INTERNAL_DOMAIN}`) && PathPrefix(`/dashboard`, `/api`)"
       - "traefik.http.routers.traefik_dash.entrypoints=tls"
       - "traefik.http.routers.traefik_dash.tls=true"
       - "traefik.http.routers.traefik_dash.tls.certresolver=letsencrypt"
