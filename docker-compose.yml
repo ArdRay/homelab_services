@@ -1,10 +1,10 @@
 version: '3.8' 
 
-x-logging: &logging
-  logging:
-    driver: loki
-    options:
-      loki-url: "${LOKI_URL}"
+# x-logging: &logging
+#   logging:
+#     driver: loki
+#     options:
+#       loki-url: "${LOKI_URL}"
 
 services:
   proxy:
@@ -332,7 +332,7 @@ services:
     cpus: 1
     mem_limit: 512m
     mem_reservation: 128m
-    <<: *logging
+    # <<: *logging
 
   tor_socks5:
     image: peterdavehello/tor-socks-proxy:${TOR_SOCKS_VERSION:-latest@sha256:a4c9f941d06f29ed71620fad082f875f3bd4ed7f7dec291e0ee790245863487c}
@@ -343,7 +343,7 @@ services:
     cpus: 1
     mem_limit: 512m
     mem_reservation: 128m
-    <<: *logging
+    # <<: *logging
 
 networks:
   proxy:
