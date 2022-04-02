@@ -325,7 +325,7 @@ services:
       socket_proxy:
         condition: service_healthy
     volumes:
-      - ./tor_services:/var/lib/tor/onion_services
+      - ${DATA_FOLDER}/tor_services:/var/lib/tor/onion_services
     environment:
       DOCKER_HOST: "tcp://socket_proxy.internal:2375"
     restart: always
