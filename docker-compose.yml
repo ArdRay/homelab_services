@@ -354,3 +354,6 @@ networks:
     internal: true
   tor:
     driver: bridge
+  socket_proxy:
+    driver: bridge
+    internal: true
