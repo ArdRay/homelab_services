@@ -489,6 +489,7 @@ services:
     image: ghcr.io/linuxserver/jackett:${JACKETT_VERSION:-0.20.788@sha256:72b7442aef21d01fb9e852387daf815187a87171555f140622df060624ca1aaa}
     networks:
       - media_automation
+      - vpn
     depends_on:
       proxy:
         condition: service_healthy
