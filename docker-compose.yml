@@ -167,11 +167,9 @@ services:
     mem_limit: 16384m
     mem_reservation: 4096m
 
-
-  # Electrum RPC -50001
-  # Prometheus - 4224
   electrs:
     image: getumbrel/electrs:${ELECTRS_VERSION:-v0.9.4@sha256:b1590ac6cfb0e5b481c6a7af7f0626d76cbb91c63702b0f5c47e2829e9c37997}
+    user: 1000:1000
     volumes:
       - /data_ssd/bitcoin:/data/.bitcoin:ro
       - /data_ssd/electrs:/data
@@ -179,6 +177,12 @@ services:
       - proxy
       - bitcoin
       - tor
+    environment:
+      ELECTRS_DB_DIR: /data/db
+      ELECTRS_NETWORK: bitcoin
+      ELECTRS_ELECTRUM_RPC_ADDR: 0.0.0.0:50001
+      ELECTRS_MONITORING_ADDR: 0.0.0.0:4224
+      ELECTRS_LOG_FILTERS: INFO
     depends_on:
       bitcoin:
         condition: service_started
