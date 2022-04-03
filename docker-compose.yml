@@ -111,13 +111,6 @@ services:
       - "traefik.http.routers.vpn-rtr.service=vpn-svc"
       - "traefik.http.services.vpn-svc.loadbalancer.server.port=8080"
       - "traefik.http.routers.vpn-rtr.middlewares=authelia@docker,default-headers@file"
-      - "traefik.http.routers.flared-rtr.rule=Host(`flared.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.flared-rtr.entrypoints=tls"
-      - "traefik.http.routers.flared-rtr.tls=true"
-      - "traefik.http.routers.flared-rtr.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.flared-rtr.service=flared-svc"
-      - "traefik.http.services.flared-svc.loadbalancer.server.port=8191"
-      - "traefik.http.routers.flared-rtr.middlewares=default-headers@file"
     cpus: 3
     mem_limit: 512m
     mem_reservation: 128m
