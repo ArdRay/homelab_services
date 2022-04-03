@@ -180,6 +180,8 @@ services:
     environment:
       ELECTRS_DB_DIR: /data/db
       ELECTRS_NETWORK: bitcoin
+      ELECTRS_DAEMON_RPC_ADDR: bitcoin.internal:8332
+      ELECTRS_DAEMON_P2P_ADDR: bitcoin.internal:8333
       ELECTRS_ELECTRUM_RPC_ADDR: 0.0.0.0:50001
       ELECTRS_MONITORING_ADDR: 0.0.0.0:4224
       ELECTRS_LOG_FILTERS: INFO
