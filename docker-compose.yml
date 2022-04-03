@@ -117,7 +117,7 @@ services:
       - "traefik.http.routers.flared-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.flared-rtr.service=flared-svc"
       - "traefik.http.services.flared-svc.loadbalancer.server.port=8191"
-      - "traefik.http.routers.flared-rtr.middlewares=authelia@docker,default-headers@file"
+      - "traefik.http.routers.flared-rtr.middlewares=default-headers@file"
     cpus: 3
     mem_limit: 512m
     mem_reservation: 128m
@@ -266,7 +266,7 @@ services:
       - "traefik.http.routers.traefik_dash.tls=true"
       - "traefik.http.routers.traefik_dash.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik_dash.service=api@internal"
-      - 'traefik.http.middlewares.authelia.forwardauth.address=http://idp.${INTERNAL_DOMAIN}/api/verify?rd=https://idp.${INTERNAL_DOMAIN}/'
+      - 'traefik.http.middlewares.authelia.forwardauth.address=https://idp.${INTERNAL_DOMAIN}/api/verify?rd=https://idp.${INTERNAL_DOMAIN}/'
       - 'traefik.http.middlewares.authelia.forwardauth.trustForwardHeader=true'
       - 'traefik.http.middlewares.authelia.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
     cpus: 2
