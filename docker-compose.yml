@@ -168,7 +168,8 @@ services:
     mem_reservation: 4096m
 
   electrs:
-    image: getumbrel/electrs:${ELECTRS_VERSION:-v0.9.4@sha256:b1590ac6cfb0e5b481c6a7af7f0626d76cbb91c63702b0f5c47e2829e9c37997}
+    image: dmp1ce/electrs:0.9.5@sha256:0384e88f6130c0f3677a6513f6250d1ec5cfe91487ac74efbff3bcc1f395654a
+    #image: getumbrel/electrs:${ELECTRS_VERSION:-v0.9.4@sha256:b1590ac6cfb0e5b481c6a7af7f0626d76cbb91c63702b0f5c47e2829e9c37997}
     user: 1000:1000
     volumes:
       - /data_ssd/bitcoin:/data/.bitcoin:ro
@@ -178,7 +179,7 @@ services:
       - bitcoin
       - tor
     environment:
-      ELECTRS_DB_DIR: /data/db
+      ELECTRS_DB_DIR: /data
       ELECTRS_NETWORK: bitcoin
       ELECTRS_DAEMON_RPC_ADDR: bitcoin.internal:8332
       ELECTRS_DAEMON_P2P_ADDR: bitcoin.internal:8333
