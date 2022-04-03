@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   proxy:
-    image: traefik:v2.6.2@sha256:b8ca739c8361611a964dfa5f023750de17f34e342997c50dbdfb5a38e3450edd
+    image: traefik:${TRAEFIK_VERSION:-v2.6.3@sha256:a1219f2ba73f764ee9c550f3c13045a9264c6b78bdd0b0db6e956a7f96972f48}
     command:
       - "--providers.docker.endpoint=tcp://socket_proxy.internal:2375"
       - "--providers.docker.swarmMode=false"
@@ -98,7 +98,7 @@ services:
     #<<: *logging
 
   socket_proxy:
-    image: fluencelabs/docker-socket-proxy@sha256:1a0645aff1364aa8047046f8bf7b3aee061fa6dc2765073bee70bb51eccec5df
+    image: fluencelabs/docker-socket-proxy${SOCKET_PROXY_VERSION:-@sha256:1a0645aff1364aa8047046f8bf7b3aee061fa6dc2765073bee70bb51eccec5df}
     hostname: socket_proxy.internal
     restart: always
     networks:
@@ -151,7 +151,7 @@ services:
     mem_reservation: 32m
 
   dns:
-    image: spx01/blocky:v0.18@sha256:e37a4ab21bd737c584cc733f10ed0d626e86308a547e7201877af85dfc443a7e
+    image: spx01/blocky:${BLOCKY_VERSION:-v0.18@sha256:e37a4ab21bd737c584cc733f10ed0d626e86308a547e7201877af85dfc443a7e}
     networks:
       - proxy
       - monitoring
@@ -182,7 +182,7 @@ services:
   ######
 
   gitea_server:
-    image: gitea/gitea:1.16.5@sha256:4b54e3f659b425a94b3fc448bedca69a52140aaa86becdaf89ff0dc422efe144
+    image: gitea/gitea:${GITEA_VERSION:-1.16.5@sha256:4b54e3f659b425a94b3fc448bedca69a52140aaa86becdaf89ff0dc422efe144}
     environment:
       - USER_UID=1000
       - USER_GID=1000
@@ -208,6 +208,9 @@ services:
       - GITEA__webhook__ALLOWED_HOST_LIST=external,*.${INTERNAL_DOMAIN}
       - GITEA__oauth2__ENABLE=true
       - GITEA__federation__ENABLED=false
+      - GITEA__ui__DEFAULT_THEME=arc-green
+      - GITEA__openid__ENABLE_OPENID_SIGNIN=false
+      - GITEA__openid__ENABLE_OPENID_SIGNUP=false
     restart: always
     healthcheck:
       test: [ "CMD-SHELL", "curl --silent --fail --output /dev/null http://localhost:3000 || exit 1" ]
@@ -244,7 +247,7 @@ services:
     mem_reservation: 256m
 
   gitea_postgres:
-    image: postgres:13
+    image: postgres:${POSTGRES_VERSION:-14.2@sha256:1cb07b811f2ec7b7bf3c42fc3dc19c1b5e87775eee88c2b1a8793420c4de0781}
     restart: always
     environment:
       - POSTGRES_USER=${GITEA_DATABASE_USER}
@@ -267,9 +270,8 @@ services:
   ####
   ## AUTHELIA
   ####
-
   authelia_server:
-    image: authelia/authelia:4.34.5@sha256:a3514a21a862b7e62d6f69ce6f5ebd9635cca587940a8f913e9efa14193a3eef
+    image: authelia/authelia:${AUTHELIA_VERSION:-4.34.5@sha256:a3514a21a862b7e62d6f69ce6f5ebd9635cca587940a8f913e9efa14193a3eef}
     volumes:
       - ./authelia_server/configuration.yml:/config/configuration.yml
     hostname: authelia.internal
@@ -306,7 +308,7 @@ services:
     mem_reservation: 64m
 
   authelia_postgres:
-    image: postgres:alpine3.15@sha256:b7ffee5fd914008b41f265c76248586e78b52ef77b3a5c2ac48393633831f7fb
+    image: postgres:${POSTGRES_ALPINE_VERSION:-14.2-alpine3.15@sha256:ddcffbdfad26e68db36cbcc7a50f03ee2aa8079bb986d92d0b3a5da51f2f9baf}
     restart: always
     hostname: authelia_postgres.internal
     networks:
@@ -326,7 +328,7 @@ services:
     mem_reservation: 128m
   
   authelia_redis:
-    image: redis:alpine3.15@sha256:32f8cf4bf6412626b21273fed376182b6786b75182e4a19f90f3f57d01362fbb
+    image: redis:${REDIS_ALPINE_VERSION:-alpine3.15@sha256:32f8cf4bf6412626b21273fed376182b6786b75182e4a19f90f3f57d01362fbb}
     restart: always
     hostname: authelia_redis.internal
     networks:
@@ -356,7 +358,7 @@ services:
     mem_reservation: 32m
 
   squid_proxy: 
-    image: ubuntu/squid:4.13-21.10_edge@sha256:b8a7b58e7d6b66dc03b3460b60b173201a8a94d08be735b824afbd1c19947bb8
+    image: ubuntu/squid:${SQUID_VERSION:-4.13-21.10_edge@sha256:b8a7b58e7d6b66dc03b3460b60b173201a8a94d08be735b824afbd1c19947bb8}
     hostname: proxy.internal
     networks:
       - proxy
@@ -382,7 +384,7 @@ services:
     mem_reservation: 256m
 
   squid_proxy_exporter:
-    image: boynux/squid-exporter:v1.10.3@sha256:f9ed763d95356dc943542935817c81ebdd134331147a4313c3e53d00e40268df
+    image: boynux/squid-exporter:${SQUID_EXPORTER_VERSION:-v1.10.3@sha256:f9ed763d95356dc943542935817c81ebdd134331147a4313c3e53d00e40268df}
     hostname: squid_proxy_exporter.internal
     networks:
       - squid_exporter
@@ -405,7 +407,7 @@ services:
     mem_reservation: 64m
 
   prometheus:
-    image: prom/prometheus:v2.34.0@sha256:cb42332b66ac51a05c52f255e48a4496c0a172676093123bf28b37762009e78a
+    image: prom/prometheus:${PROMETHEUS_VERSION:-v2.34.0@sha256:cb42332b66ac51a05c52f255e48a4496c0a172676093123bf28b37762009e78a}
     user: "0:0"
     networks:
       - proxy
@@ -442,7 +444,7 @@ services:
     mem_reservation: 256m
 
   grafana:
-    image: grafana/grafana-oss:8.4.4@sha256:b1a82a9f837ce269542cc023f0607753ca7f709195d2bdec93e2e703fd13f8c0
+    image: grafana/grafana-oss:${GRAFANA_VERSION:-8.4.4@sha256:b1a82a9f837ce269542cc023f0607753ca7f709195d2bdec93e2e703fd13f8c0}
     user: "0:0"
     networks:
       - proxy
@@ -492,7 +494,7 @@ services:
     mem_reservation: 128m
 
   loki:
-    image: grafana/loki:main@sha256:f4e4e128139d737e82c4d112315060fca9297b833df6a621918a100ce3fa390b
+    image: grafana/loki:${LOKI_VERSION:-main@sha256:f4e4e128139d737e82c4d112315060fca9297b833df6a621918a100ce3fa390b}
     command: -config.file=/etc/loki/loki-config.yaml
     user: "0:0"
     networks:
