@@ -12,7 +12,7 @@ version: '3.8'
 
 services:
   socket_proxy:
-    image: fluencelabs/docker-socket-proxy@sha256:1a0645aff1364aa8047046f8bf7b3aee061fa6dc2765073bee70bb51eccec5df
+    image: fluencelabs/docker-socket-proxy${SOCKET_PROXY_VERSION:-@sha256:1a0645aff1364aa8047046f8bf7b3aee061fa6dc2765073bee70bb51eccec5df}
     hostname: socket_proxy.internal
     restart: always
     networks:
@@ -65,7 +65,7 @@ services:
     mem_reservation: 32m
 
   flared:
-    image: ghcr.io/flaresolverr/flaresolverr:latest@sha256:cff2167146ba15bf00b1a1ddc142dd8b06a1a93c6addba369eccff5b8da81492
+    image: ghcr.io/flaresolverr/flaresolverr:${FLARED_VERSION:-latest@sha256:cff2167146ba15bf00b1a1ddc142dd8b06a1a93c6addba369eccff5b8da81492}
     network_mode: service:vpn
     environment:
       - LOG_LEVEL=info
@@ -73,7 +73,7 @@ services:
     restart: unless-stopped    
 
   vpn:
-    image: qmcgaw/gluetun:v3.28.1@sha256:c9fd72306d59bb3ed4ac4a1916dd13551c162104d010d1eb1b6611e38904458d
+    image: qmcgaw/gluetun:${GLUETUN_VERSION:-v3.28.1@sha256:c9fd72306d59bb3ed4ac4a1916dd13551c162104d010d1eb1b6611e38904458d}
     hostname: vpn.internal
     networks:
       - vpn
@@ -124,7 +124,7 @@ services:
     #<<: *logging
 
   qbittorrent:
-    image: ghcr.io/linuxserver/qbittorrent:4.4.2@sha256:ee73d83e54ebec48e8550b759bb14e6c68b9901bb6c0bbbde2c363476760b3fd
+    image: ghcr.io/linuxserver/qbittorrent:${QBITTORRENT_VERSION:-4.4.2@sha256:ee73d83e54ebec48e8550b759bb14e6c68b9901bb6c0bbbde2c363476760b3fd}
     network_mode: service:vpn
     depends_on:
       proxy:
@@ -151,7 +151,7 @@ services:
     #<<: *logging
 
   rente:
-    image: nginx:alpine
+    image: nginx:${NGINX_ALPINE_VERSION:-1.21.6-alpine@sha256:4b63f6b2255f7933f52e8d813af4c6bd578b5f8b83387a4de1ce76e55de8beba}
     networks:
       - rente
     depends_on:
@@ -179,7 +179,7 @@ services:
     # <<: *logging
 
   proxy:
-    image: traefik:v2.6.2@sha256:b8ca739c8361611a964dfa5f023750de17f34e342997c50dbdfb5a38e3450edd
+    image: traefik:${TRAEFIK_VERSION:-v2.6.3@sha256:a1219f2ba73f764ee9c550f3c13045a9264c6b78bdd0b0db6e956a7f96972f48}
     command:
       - "--providers.docker.endpoint=tcp://socket_proxy.internal:2375"
       - "--providers.docker.swarmMode=false"
@@ -294,7 +294,7 @@ services:
     # <<: *logging
 
   dns:
-    image: spx01/blocky
+    image: spx01/blocky:${BLOCKY_VERSION:-v0.18@sha256:e37a4ab21bd737c584cc733f10ed0d626e86308a547e7201877af85dfc443a7e}
     networks:
       - dns
     depends_on:
@@ -367,7 +367,7 @@ services:
   #   <<: *logging
 
   emby:
-    image: ghcr.io/linuxserver/emby:4.6.7@sha256:84776ef60c8f06306274a4688c9bea3192f9c00d834a7024cca2b01a5a0bf554
+    image: ghcr.io/linuxserver/emby:${EMBY_VERSION:-4.6.7@sha256:84776ef60c8f06306274a4688c9bea3192f9c00d834a7024cca2b01a5a0bf554}
     networks:
       - proxy
       - media_automation
@@ -408,7 +408,7 @@ services:
     # <<: *logging
  
   sonarr:
-    image: ghcr.io/linuxserver/sonarr:3.0.7@sha256:d055e6a69617b1604d30c12bbaa48ae3ccb12108ba9c1155808acacfe760634e
+    image: ghcr.io/linuxserver/sonarr:${SONARR_VERSION:-3.0.7@sha256:d055e6a69617b1604d30c12bbaa48ae3ccb12108ba9c1155808acacfe760634e}
     networks:
       - media_automation
       - vpn
@@ -429,9 +429,9 @@ services:
       - /data/series:/tv
       - /data_cache/qbittorrent/downloads:/downloads
     healthcheck:
-     test: curl -fSs http://127.0.0.1:8989 || exit 1
-     interval: 5s
-     timeout: 10s
+      test: curl -fSs http://127.0.0.1:8989 || exit 1
+      interval: 5s
+      timeout: 10s
     restart: always
     labels:
       - "traefik.enable=true"
@@ -447,7 +447,7 @@ services:
     #<<: *logging
 
   radarr:
-    image: ghcr.io/linuxserver/radarr:4.0.5@sha256:01323a4640f694b485ef9b491b8117a3deefd33e20823ac7bb5f8e34109b1a50
+    image: ghcr.io/linuxserver/radarr:${RADARR_VERSION:-4.0.5@sha256:01323a4640f694b485ef9b491b8117a3deefd33e20823ac7bb5f8e34109b1a50}
     networks:
       - media_automation
       - vpn
@@ -486,7 +486,7 @@ services:
     #<<: *logging
 
   jackett:
-    image: ghcr.io/linuxserver/jackett:0.20.770@sha256:13c31db814f4fd95ed368f59aec9efda9455586348ef5b46b03dce6da5798614
+    image: ghcr.io/linuxserver/jackett:${JACKETT_VERSION:-0.20.788@sha256:72b7442aef21d01fb9e852387daf815187a87171555f140622df060624ca1aaa}
     networks:
       - media_automation
     depends_on:
@@ -519,7 +519,7 @@ services:
     #<<: *logging
 
   dashboard:
-    image: linuxserver/heimdall:2.4.8@sha256:ecbea07cd028fe33b60ea6bcb6ead7f01da975ea9e9b3ca31191b68ae4d1f49a
+    image: linuxserver/heimdall:${HEIMDALL_VERSION:-2.4.10@sha256:8a9ddae0cda12aa08fe3a84413a6a1bdf6ae9937c06131cd7f0ccc3f76dbee44}
     networks:
       - dashboard
     depends_on:
@@ -551,7 +551,7 @@ services:
     # <<: *logging
 
   rss:
-    image: miniflux/miniflux:2.0.35@sha256:d242a754cdd946431d9ae9ff876b8f5a838746ce934dae893cd743fee3fe967f
+    image: miniflux/miniflux:${MINIFLUX_VERSION:-2.0.36@sha256:3131917419c1ad1065796e628335fed6ae0cf68e4fb7af88746894354f070696}
     networks:
       - rss
     depends_on:
@@ -586,7 +586,7 @@ services:
     # <<: *logging
 
   postgres_rss:
-    image: postgres:alpine3.15@sha256:b7ffee5fd914008b41f265c76248586e78b52ef77b3a5c2ac48393633831f7fb
+    image: postgres:${POSTGRES_ALPINE_VERSION:-14.2-alpine3.15@sha256:ddcffbdfad26e68db36cbcc7a50f03ee2aa8079bb986d92d0b3a5da51f2f9baf}
     restart: always
     networks:
       - rss
@@ -638,7 +638,7 @@ services:
     #<<: *logging
 
   postgres_nextcloud:
-    image: postgres:alpine3.15@sha256:b7ffee5fd914008b41f265c76248586e78b52ef77b3a5c2ac48393633831f7fb
+    image: postgres:${POSTGRES_ALPINE_VERSION:-14.2-alpine3.15@sha256:ddcffbdfad26e68db36cbcc7a50f03ee2aa8079bb986d92d0b3a5da51f2f9baf}
     restart: always
     networks:
       - nextcloud
@@ -658,7 +658,7 @@ services:
     # <<: *logging
 
   redis:
-    image: redis:alpine3.15@sha256:32f8cf4bf6412626b21273fed376182b6786b75182e4a19f90f3f57d01362fbb
+    image: redis:${REDIS_ALPINE_VERSION:-alpine3.15@sha256:32f8cf4bf6412626b21273fed376182b6786b75182e4a19f90f3f57d01362fbb}
     hostname: redis.internal
     restart: always
     networks:
@@ -702,13 +702,6 @@ services:
       - OVERWRITEHOST=cloud.${INTERNAL_DOMAIN}
       - OVERWRITEPROTOCOL=https
       - REDIS_HOST=redis.internal
-      # - SMTP_HOST=${NEXTCLOUD_SMTP_HOST}
-      # - SMTP_SECURE=${NEXTCLOUD_SMTP_SECURE}
-      # - SMTP_PORT=${NEXTCLOUD_SMTP_PORT}
-      # - SMTP_NAME=${NEXTCLOUD_SMTP_NAME}
-      # - SMTP_PASSWORD=${NEXTCLOUD_SMTP_PASSWORD}
-      # - MAIL_FROM_ADDRESS=${NEXTCLOUD_MAIL_FROM_ADDRESS}
-      # - MAIL_DOMAIN=${NEXTCLOUD_MAIL_DOMAIN}
     # healthcheck:
     #   test: curl -fSs http://127.0.0.1:80/ocs/v2.php/apps/serverinfo/api/v1/info || exit 1
     #   interval: 10s
@@ -803,7 +796,7 @@ services:
   #     - "traefik.http.routers.matrix-rtr.middlewares=default-header@file"
 
   sftp:
-    image: "emberstack/sftp"
+    image: emberstack/sftp:${SFTP_VERSION:-5.1.5@sha256:f1633cb7ed92c3a9ac15e70a1c3f35c7f3da3f6a2c2dd84b1e0f34d980c9601a}
     restart: unless-stopped
     networks:
       - proxy
