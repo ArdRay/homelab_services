@@ -274,7 +274,6 @@ services:
     image: authelia/authelia:${AUTHELIA_VERSION:-4.34.5@sha256:a3514a21a862b7e62d6f69ce6f5ebd9635cca587940a8f913e9efa14193a3eef}
     volumes:
       - ./authelia_server/configuration.yml:/config/configuration.yml:ro
-      - ./authelia_server/notification.txt:/config/notification.txt
     hostname: authelia.internal
     restart: always
     depends_on:
