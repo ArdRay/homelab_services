@@ -167,20 +167,25 @@ services:
     mem_limit: 16384m
     mem_reservation: 4096m
 
+
+  # Electrum RPC -50001
+  # Prometheus - 4224
   electrs:
-    image: getumbrel/electrs:v0.9.4@sha256:b1590ac6cfb0e5b481c6a7af7f0626d76cbb91c63702b0f5c47e2829e9c37997
+    image: getumbrel/electrs:${ELECTRS_VERSION:-v0.9.4@sha256:b1590ac6cfb0e5b481c6a7af7f0626d76cbb91c63702b0f5c47e2829e9c37997}
     volumes:
-      - /home/jaonoctus/.bitcoin:/data/.bitcoin:ro
-      - ./data/electrs:/data
-    restart: on-failure
-    stop_grace_period: 5m
-    ports:
-      - "50001:50001"
+      - /data_ssd/bitcoin:/data/.bitcoin:ro
+      - /data_ssd/electrs:/data
     networks:
-      default:
-        ipv4_address: 10.21.22.10
-    depends_on:
+      - proxy
       - bitcoin
+      - tor
+    depends_on:
+      bitcoin:
+        condition: service_started
+      proxy:
+        condition: service_healthy
+    restart: always
+
 
   # lnd:
   #   image: lightninglabs/lnd:v0.14.0-beta@sha256:01bcd6d90e25dd5ca35c33f5ec1291218b4d3d898263ea407466a58b04329d0e
