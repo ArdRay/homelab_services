@@ -185,7 +185,17 @@ services:
       proxy:
         condition: service_healthy
     restart: always
-
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.core.rule=Host(`electrs.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.core.entrypoints=tls"
+      - "traefik.http.routers.core.tls=true"
+      - "traefik.http.routers.core.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.core.service=bitcoin"
+      - "traefik.http.services.bitcoin.loadbalancer.server.port=50001"
+    cpus: 4
+    mem_limit: 4096m
+    mem_reservation: 1024m
 
   # lnd:
   #   image: lightninglabs/lnd:v0.14.0-beta@sha256:01bcd6d90e25dd5ca35c33f5ec1291218b4d3d898263ea407466a58b04329d0e
