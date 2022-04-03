@@ -157,12 +157,12 @@ services:
       test: ["CMD", "bitcoin-cli", "-getinfo"]
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.core.rule=Host(`core.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.core.entrypoints=tls"
-      - "traefik.http.routers.core.tls=true"
-      - "traefik.http.routers.core.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.core.service=bitcoin"
-      - "traefik.http.services.bitcoin.loadbalancer.server.port=8332"
+      - "traefik.http.routers.bitcoin-rtr.rule=Host(`core.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.bitcoin-rtr.entrypoints=tls"
+      - "traefik.http.routers.bitcoin-rtr.tls=true"
+      - "traefik.http.routers.bitcoin-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.bitcoin-rtr.service=bitcoin-svc"
+      - "traefik.http.services.bitcoin-svc.loadbalancer.server.port=8332"
     cpus: 4
     mem_limit: 16384m
     mem_reservation: 4096m
@@ -187,12 +187,12 @@ services:
     restart: always
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.core.rule=Host(`electrs.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.core.entrypoints=tls"
-      - "traefik.http.routers.core.tls=true"
-      - "traefik.http.routers.core.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.core.service=bitcoin"
-      - "traefik.http.services.bitcoin.loadbalancer.server.port=50001"
+      - "traefik.http.routers.electrs-rtr.rule=Host(`electrs.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.electrs-rtr.entrypoints=tls"
+      - "traefik.http.routers.electrs-rtr.tls=true"
+      - "traefik.http.routers.electrs-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.electrs-rtr.service=electrs-svc"
+      - "traefik.http.services.electrs-svc.loadbalancer.server.port=50001"
     cpus: 4
     mem_limit: 4096m
     mem_reservation: 1024m
