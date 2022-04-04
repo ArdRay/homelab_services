@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   drone:
-    image: drone/drone:${DRONE_VERSION:-2}
+    image: drone/drone:${DRONE_VERSION:-2.11.1@sha256:8dd696b90fb852769d00e8a45cbddd23eb793c09d13bd5ed99c39e450e783358}
     restart: unless-stopped
     environment:
       # https://docs.drone.io/server/provider/gitea/
@@ -30,7 +30,7 @@ services:
       - ./drone:/data
 
   drone-runner:
-    image: drone/drone-runner-docker:${DRONE_RUNNER_VERSION:-1}
+    image: drone/drone-runner-docker:${DRONE_RUNNER_VERSION:-1.8.0@sha256:891de7ac395ee144a0689a6ab402765b38763ba5ff2de9dbac2770cfc2ce56cb}
     restart: unless-stopped
     depends_on:
       drone:
@@ -51,7 +51,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   nginx:
-    image: nginx:stable@sha256:aed492c4dc93d2d1f6fe9a49f00bc7e1863d950334a93facd8ca1317292bf6aa
+    image: nginx:${NGINX_ALPINE_VERSION:-1.21.6-alpine@sha256:4b63f6b2255f7933f52e8d813af4c6bd578b5f8b83387a4de1ce76e55de8beba}
     restart: unless-stopped
     ports:
       - 80:80
