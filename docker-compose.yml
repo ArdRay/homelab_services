@@ -286,7 +286,7 @@ services:
       MYSQL_ROOT_PASSWORD: "${MEMPOOL_DATABASE_ROOT_PASSWORD}"
     stop_grace_period: 1m
     volumes:
-      - ${DATA_FOLDER}/mempool_database:/var/lib/mysql
+      - ${SSD_FOLDER}/mempool_database:/var/lib/mysql
     cpus: 2
     mem_limit: 4096m
     mem_reservation: 1024m
