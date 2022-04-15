@@ -206,7 +206,7 @@ services:
 
   mempool_frontend:
     image: mempool/frontend:${MEMPOOL_FRONTEND_VERSION:-v2.3.1@sha256:29a7d4823365228d63be3d8ec29f65f5557ae1d1ea85ba6cf0621a26138c9209}
-    command: "./wait-for db:3306 --timeout=720 -- nginx -g 'daemon off;'"
+    command: "./wait-for mempool_database.internal:3306 --timeout=720 -- nginx -g 'daemon off;'"
     user: "1000:1000"
     networks:
       - proxy
@@ -233,7 +233,7 @@ services:
 
   mempool_backend:
     image: mempool/backend:${MEMPOOL_BACKEND_VERSION:-v2.3.1@sha256:d72049dde9fe6fd577dc08e99c415403da65bc7862b3beba919fac682a2bd632}
-    command: "./wait-for-it.sh db:3306 --timeout=720 --strict -- ./start.sh"
+    command: "./wait-for-it.sh mempool_database.internal:3306 --timeout=720 --strict -- ./start.sh"
     user: "1000:1000"
     networks:
       - mempool
