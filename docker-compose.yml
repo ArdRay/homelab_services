@@ -150,7 +150,7 @@ services:
       ONIONSERVICE_NAME: bitcoin
       ONIONSERVICE_PORT: 8333
     volumes:
-      - /data_ssd/bitcoin:/data/.bitcoin
+      - ${SSD_FOLDER}/bitcoin:/data/.bitcoin
       - ./bitcoin/bitcoin.conf:/data/bitcoin.conf
     restart: always
     healthcheck:
@@ -172,8 +172,8 @@ services:
     hostname: electrs.internal
     user: 1000:1000
     volumes:
-      - /data_ssd/bitcoin:/data/.bitcoin:ro
-      - /data_ssd/electrs:/data
+      - ${SSD_FOLDER}/bitcoin:/data/.bitcoin:ro
+      - ${SSD_FOLDER}/electrs:/data
     networks:
       - proxy
       - bitcoin
@@ -211,6 +211,9 @@ services:
     networks:
       - proxy
       - mempool
+    depends_on:
+      proxy:
+        condition: service_healthy
     environment:
       FRONTEND_HTTP_PORT: "8080"
       BACKEND_MAINNET_HTTP_HOST: "mempool_backend"
@@ -236,6 +239,13 @@ services:
       - mempool
       - bitcoin
       - tor
+    depends_on:
+      bitcoin:
+        condition: service_started
+      electrs:
+        condition: service_started
+      mempool_database:
+        condition: service_started
     environment:
       MEMPOOL_BACKEND: "electrum"
       ELECTRUM_HOST: "electrs.internal"
@@ -257,7 +267,7 @@ services:
     restart: always
     stop_grace_period: 1m
     volumes:
-      - /data/mempool_backend:/backend/cache
+      - ${DATA_FOLDER}/mempool_backend:/backend/cache
     cpus: 2
     mem_limit: 4096m
     mem_reservation: 1024m
@@ -275,7 +285,7 @@ services:
       MYSQL_ROOT_PASSWORD: "${MEMPOOL_DATABASE_ROOT_PASSWORD}"
     stop_grace_period: 1m
     volumes:
-      - /data/mempool_database:/var/lib/mysql
+      - ${DATA_FOLDER}/mempool_database:/var/lib/mysql
     cpus: 2
     mem_limit: 4096m
     mem_reservation: 1024m
