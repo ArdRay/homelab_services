@@ -169,6 +169,7 @@ services:
 
   electrs:
     image: getumbrel/electrs:${ELECTRS_VERSION:-v0.9.4@sha256:b1590ac6cfb0e5b481c6a7af7f0626d76cbb91c63702b0f5c47e2829e9c37997}
+    hostname: electrs.internal
     user: 1000:1000
     volumes:
       - /data_ssd/bitcoin:/data/.bitcoin:ro
@@ -193,13 +194,89 @@ services:
     restart: always
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.electrs-rtr.rule=Host(`electrs.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.electrs-rtr.entrypoints=tls"
-      - "traefik.http.routers.electrs-rtr.tls=true"
-      - "traefik.http.routers.electrs-rtr.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.electrs-rtr.service=electrs-svc"
-      - "traefik.http.services.electrs-svc.loadbalancer.server.port=50001"
+      - "traefik.tcp.routers.electrs-rtr.rule=HostSNI(`electrs.${INTERNAL_DOMAIN}`)"
+      - "traefik.tcp.routers.electrs-rtr.entrypoints=tls"
+      - "traefik.tcp.routers.electrs-rtr.tls=true"
+      - "traefik.tcp.routers.electrs-rtr.tls.certresolver=letsencrypt"
+      - "traefik.tcp.routers.electrs-rtr.service=electrs-svc"
+      - "traefik.tcp.services.electrs-svc.loadbalancer.server.port=50001"
     cpus: 4
+    mem_limit: 4096m
+    mem_reservation: 1024m
+
+  mempool_frontend:
+    image: mempool/frontend:${MEMPOOL_FRONTEND_VERSION:-v2.3.1@sha256:29a7d4823365228d63be3d8ec29f65f5557ae1d1ea85ba6cf0621a26138c9209}
+    command: "./wait-for db:3306 --timeout=720 -- nginx -g 'daemon off;'"
+    user: "1000:1000"
+    networks:
+      - proxy
+      - mempool
+    environment:
+      FRONTEND_HTTP_PORT: "8080"
+      BACKEND_MAINNET_HTTP_HOST: "mempool_backend"
+    restart: always
+    stop_grace_period: 1m
+    cpus: 2
+    mem_limit: 4096m
+    mem_reservation: 1024m
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mempool-rtr.rule=Host(`mempool.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.mempool-rtr.entrypoints=tls"
+      - "traefik.http.routers.mempool-rtr.tls=true"
+      - "traefik.http.routers.mempool-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.mempool-rtr.service=mempool-svc"
+      - "traefik.http.services.mempool-svc.loadbalancer.server.port=8080"
+
+  mempool_backend:
+    image: mempool/backend:${MEMPOOL_BACKEND_VERSION:-v2.3.1@sha256:d72049dde9fe6fd577dc08e99c415403da65bc7862b3beba919fac682a2bd632}
+    command: "./wait-for-it.sh db:3306 --timeout=720 --strict -- ./start.sh"
+    user: "1000:1000"
+    networks:
+      - mempool
+      - bitcoin
+      - tor
+    environment:
+      MEMPOOL_BACKEND: "electrum"
+      ELECTRUM_HOST: "electrs.internal"
+      ELECTRUM_PORT: "50001"
+      ELECTRUM_TLS_ENABLED: "false"
+      CORE_RPC_HOST: "bitcoin.internal"
+      CORE_RPC_PORT: "8332"
+      CORE_RPC_USERNAME: "${MEMPOOL_CORE_RPC_USERNAME}"
+      CORE_RPC_PASSWORD: "${MEMPOOL_CORE_RPC_PASSWORD}"
+      DATABASE_ENABLED: "true"
+      DATABASE_HOST: "mempool_database.internal"
+      DATABASE_DATABASE: "${MEMPOOL_DATABASE_DATABASE}"
+      DATABASE_USERNAME: "${MEMPOOL_DATABASE_USERNAME}"
+      DATABASE_PASSWORD: "${MEMPOOL_DATABASE_PASSWORD}"
+      STATISTICS_ENABLED: "true"
+      SOCKS5PROXY_ENABLED: "true"
+      SOCKS5PROXY_HOST: "tor_socks5.internal"
+      SOCKS5PROXY_PORT: "9150"
+    restart: always
+    stop_grace_period: 1m
+    volumes:
+      - /data/mempool_backend:/backend/cache
+    cpus: 2
+    mem_limit: 4096m
+    mem_reservation: 1024m
+  
+  mempool_database:
+    image: mariadb:${MARIADB_VERSION:-10.7@sha256:364e6c38ee64f7f961cc1b70d5c31e554754c4a9fcd6516c9b5c31accf134e61}
+    hostname: mempool_database.internal
+    user: "1000:1000"
+    networks:
+      - mempool
+    environment:
+      MYSQL_DATABASE: "${MEMPOOL_DATABASE_DATABASE}"
+      MYSQL_USER: "${MEMPOOL_DATABASE_USERNAME}"
+      MYSQL_PASSWORD: "${MEMPOOL_DATABASE_PASSWORD}"
+      MYSQL_ROOT_PASSWORD: "${MEMPOOL_DATABASE_ROOT_PASSWORD}"
+    stop_grace_period: 1m
+    volumes:
+      - /data/mempool_database:/var/lib/mysql
+    cpus: 2
     mem_limit: 4096m
     mem_reservation: 1024m
 
@@ -393,3 +470,5 @@ networks:
   socket_proxy:
     driver: bridge
     internal: true
+  mempool:
+    driver: bridge
