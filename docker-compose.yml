@@ -441,7 +441,7 @@ services:
       - "traefik.http.services.prometheus-svc.loadbalancer.server.port=9090"
       - "traefik.http.routers.prometheus-rtr.middlewares=authelia@docker, default-headers@file"
     cpus: 1
-    mem_limit: 1024m
+    mem_limit: 512m
     mem_reservation: 256m
 
   grafana:
