@@ -520,6 +520,46 @@ services:
     mem_limit: 512m
     mem_reservation: 128m
 
+  healthchecks:
+    image: linuxserver/healthchecks:${HEALTHCHECKS_VERSION:-2.0.1@sha256:267c98a1d99418aa61542085f791a21e960023ea4e467dc238095be68e07e520}
+    networks:
+      - proxy
+      - monitoring
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - SITE_ROOT=https://healthchecks.${INTERNAL_DOMAIN}
+      - SITE_NAME=Homelabchecks
+      #- DEFAULT_FROM_EMAIL=<DEFAULT_FROM_EMAIL>
+      #- EMAIL_HOST=<EMAIL_HOST>
+      #- EMAIL_PORT=<EMAIL_PORT>
+      #- EMAIL_HOST_USER=<EMAIL_HOST_USER>
+      #- EMAIL_HOST_PASSWORD=<EMAIL_HOST_PASSWORD>
+      #- EMAIL_USE_TLS=<True or False>
+      # SUPERUSER_EMAIL=<SUPERUSER_EMAIL>
+      #- SUPERUSER_PASSWORD=<SUPERUSER_PASSWORD>
+      - REGENERATE_SETTINGS=True/False #optional
+      - SITE_LOGO_URL=<SITE_LOGO_URL> #optional
+      - ALLOWED_HOSTS=<ALLOWED_HOSTS> #optional
+      - SECRET_KEY=${HEALTHCHECKS_SECRET_KEY}
+      - APPRISE_ENABLED=True/False #optional
+    volumes:
+      - ./healthchecks:/config
+    ports:
+      - 8000:8000
+    restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.healthchecks-rtr.rule=Host(`healthchecks.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.healthchecks-rtr.entrypoints=loki"
+      - "traefik.http.routers.healthchecks-rtr.tls=true"
+      - "traefik.http.routers.healthchecks-rtr.service=healthchecks-svc"
+      - "traefik.http.services.healthchecks-svc.loadbalancer.server.port=8000"
+    cpus: 2
+    mem_limit: 512m
+    mem_reservation: 128m
+
+
 networks:
   proxy:
     external: true
