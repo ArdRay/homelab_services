@@ -521,7 +521,7 @@ services:
     mem_reservation: 128m
 
   healthchecks:
-    image: healthchecks/healthchecks:${HEALTHCHECKS_VERSION:-v2.0.1@sha256:87f56335defff5cf8e9ea9226fdee3bf5941c8195eb9d0a71d7267726251b09c}
+    image: linuxserver/healthchecks:${HEALTHCHECKS_VERSION:-2.0.1@sha256:267c98a1d99418aa61542085f791a21e960023ea4e467dc238095be68e07e520}
     networks:
       - proxy
       - monitoring
@@ -539,7 +539,7 @@ services:
       - SUPERUSER_EMAIL=${HEALTHCHECKS_EMAIL_HOST_USER}
       - SUPERUSER_PASSWORD=${HEALTHCHECKS_EMAIL_HOST_PASSWORD}
       - REGENERATE_SETTINGS=False
-      - ALLOWED_HOSTS=${INTERNAL_DOMAIN}
+      - ALLOWED_HOSTS=healthchecks.${INTERNAL_DOMAIN},${INTERNAL_DOMAIN}
       - SECRET_KEY=${HEALTHCHECKS_SECRET_KEY}
       - APPRISE_ENABLED=False
     volumes:
