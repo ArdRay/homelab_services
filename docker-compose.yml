@@ -19,6 +19,7 @@ services:
       - "--entrypoints.dns_udp.address=:53/udp"
       - "--entrypoints.dns_tcp.address=:53"
       - "--entrypoints.loki.address=:3100"
+      - "--entrypoints.healthcheck.address=:8000"
       - "--entrypoints.ssh.address=:2222"
       - "--entrypoints.squid.address=:3128"
       - "--entrypoints.ping.address=:8082"
@@ -548,8 +549,8 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.healthchecks-rtr.rule=Host(`healthchecks.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.healthchecks-rtr.entrypoints=tls"
-      - "traefik.http.routers.healthchecks-rtr.tls=true"
+      - "traefik.http.routers.healthchecks-rtr.entrypoints=healthchecks"
+      - "traefik.http.routers.healthchecks-rtr.tls=false"
       - "traefik.http.routers.healthchecks-rtr.service=healthchecks-svc"
       - "traefik.http.services.healthchecks-svc.loadbalancer.server.port=8000"
     cpus: 2
