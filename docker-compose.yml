@@ -521,7 +521,7 @@ services:
     mem_reservation: 128m
 
   healthchecks:
-    image: healthchecks/healthchecks:v2.0.1:${HEALTHCHECKS_VERSION:-v2.0.1@sha256:87f56335defff5cf8e9ea9226fdee3bf5941c8195eb9d0a71d7267726251b09c}
+    image: healthchecks/healthchecks:${HEALTHCHECKS_VERSION:-v2.0.1@sha256:87f56335defff5cf8e9ea9226fdee3bf5941c8195eb9d0a71d7267726251b09c}
     networks:
       - proxy
       - monitoring
