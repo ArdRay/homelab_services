@@ -551,7 +551,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.healthchecks-rtr.rule=Host(`healthchecks.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.healthchecks-rtr.entrypoints=loki"
+      - "traefik.http.routers.healthchecks-rtr.entrypoints=tls"
       - "traefik.http.routers.healthchecks-rtr.tls=true"
       - "traefik.http.routers.healthchecks-rtr.service=healthchecks-svc"
       - "traefik.http.services.healthchecks-svc.loadbalancer.server.port=8000"
