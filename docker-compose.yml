@@ -544,9 +544,7 @@ services:
       - APPRISE_ENABLED=False
     volumes:
       - ./healthchecks:/config
-    ports:
-      - 8000:8000
-    restart: unless-stopped
+    restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.healthchecks-rtr.rule=Host(`healthchecks.${INTERNAL_DOMAIN}`)"
