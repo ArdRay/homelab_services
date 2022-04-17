@@ -550,12 +550,12 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.healthchecks-rtr.rule=Host(`healthchecks.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.healthchecks-rtr.entrypoints=tls"
-      - "traefik.http.routers.healthchecks-rtr.tls=true"
-      - "traefik.http.routers.healthchecks-rtr.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.healthchecks-rtr.entrypoints=healthchecks"
+      - "traefik.http.routers.healthchecks-rtr.tls=no"
+      #- "traefik.http.routers.healthchecks-rtr.tls.certresolver=letsencrypt"
       - "traefik.http.routers.healthchecks-rtr.service=healthchecks-svc"
       - "traefik.http.services.healthchecks-svc.loadbalancer.server.port=3000"
-      - "traefik.http.routers.healthchecks-rtr.middlewares=default-headers@file"
+      #- "traefik.http.routers.healthchecks-rtr.middlewares=default-headers@file"
     cpus: 2
     mem_limit: 512m
     mem_reservation: 128m
