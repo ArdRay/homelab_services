@@ -19,7 +19,6 @@ services:
       - "--entrypoints.dns_udp.address=:53/udp"
       - "--entrypoints.dns_tcp.address=:53"
       - "--entrypoints.loki.address=:3100"
-      - "--entrypoints.healthchecks.address=:8000"
       - "--entrypoints.ssh.address=:2222"
       - "--entrypoints.squid.address=:3128"
       - "--entrypoints.ping.address=:8082"
@@ -521,45 +520,6 @@ services:
     cpus: 2
     mem_limit: 512m
     mem_reservation: 128m
-
-  healthchecks:
-    image: linuxserver/healthchecks:${HEALTHCHECKS_VERSION:-2.0.1@sha256:267c98a1d99418aa61542085f791a21e960023ea4e467dc238095be68e07e520}
-    networks:
-      - proxy
-      - monitoring
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - SITE_ROOT=https://healthchecks.${INTERNAL_DOMAIN}
-      - SITE_NAME=Homelabchecks
-      - DEFAULT_FROM_EMAIL=${HEALTHCHECKS_EMAIL_HOST_USER}
-      - EMAIL_HOST=${HEALTHCHECKS_EMAIL_HOST}
-      - EMAIL_PORT=${HEALTHCHECKS_EMAIL_PORT}
-      - EMAIL_HOST_USER=${HEALTHCHECKS_EMAIL_HOST_USER}
-      - EMAIL_HOST_PASSWORD=${HEALTHCHECKS_EMAIL_HOST_PASSWORD}
-      - EMAIL_USE_TLS=True
-      - SUPERUSER_EMAIL=${HEALTHCHECKS_EMAIL_HOST_USER}
-      - SUPERUSER_PASSWORD=${HEALTHCHECKS_EMAIL_HOST_PASSWORD}
-      - REGENERATE_SETTINGS=True
-      - ALLOWED_HOSTS=["*"]
-      - SECRET_KEY=${HEALTHCHECKS_SECRET_KEY}
-      - APPRISE_ENABLED=False
-    volumes:
-      - ./healthchecks:/config
-    restart: always
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.healthchecks-rtr.rule=Host(`healthchecks.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.healthchecks-rtr.entrypoints=healthchecks"
-      - "traefik.http.routers.healthchecks-rtr.tls=no"
-      #- "traefik.http.routers.healthchecks-rtr.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.healthchecks-rtr.service=healthchecks-svc"
-      - "traefik.http.services.healthchecks-svc.loadbalancer.server.port=3000"
-      #- "traefik.http.routers.healthchecks-rtr.middlewares=default-headers@file"
-    cpus: 2
-    mem_limit: 512m
-    mem_reservation: 128m
-
 
 networks:
   proxy:
