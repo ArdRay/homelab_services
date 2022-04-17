@@ -164,7 +164,7 @@ services:
       - "traefik.http.routers.bitcoin-rtr.service=bitcoin-svc"
       - "traefik.http.services.bitcoin-svc.loadbalancer.server.port=8332"
     cpus: 4
-    mem_limit: 16384m
+    mem_limit: 8192m
     mem_reservation: 4096m
 
   electrs:
@@ -220,8 +220,8 @@ services:
     restart: always
     stop_grace_period: 1m
     cpus: 2
-    mem_limit: 4096m
-    mem_reservation: 1024m
+    mem_limit: 512m
+    mem_reservation: 128m
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.mempool-rtr.rule=Host(`mempool.${INTERNAL_DOMAIN}`)"
@@ -270,8 +270,8 @@ services:
     volumes:
       - ${DATA_FOLDER}/mempool_backend:/backend/cache
     cpus: 2
-    mem_limit: 4096m
-    mem_reservation: 1024m
+    mem_limit: 512m
+    mem_reservation: 128m
   
   mempool_database:
     image: mariadb:${MARIADB_VERSION:-10.7@sha256:364e6c38ee64f7f961cc1b70d5c31e554754c4a9fcd6516c9b5c31accf134e61}
@@ -288,8 +288,8 @@ services:
     volumes:
       - ${SSD_FOLDER}/mempool_database:/var/lib/mysql
     cpus: 2
-    mem_limit: 4096m
-    mem_reservation: 1024m
+    mem_limit: 512m
+    mem_reservation: 128m
 
   # lnd:
   #   image: lightninglabs/lnd:v0.14.0-beta@sha256:01bcd6d90e25dd5ca35c33f5ec1291218b4d3d898263ea407466a58b04329d0e
