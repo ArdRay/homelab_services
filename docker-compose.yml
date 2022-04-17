@@ -70,7 +70,10 @@ services:
     environment:
       - LOG_LEVEL=info
       - TZ=Europe/London
-    restart: unless-stopped    
+    restart: unless-stopped
+    cpus: 0.5
+    mem_limit: 64m
+    mem_reservation: 32m
 
   vpn:
     image: qmcgaw/gluetun:${GLUETUN_VERSION:-v3.28.1@sha256:c9fd72306d59bb3ed4ac4a1916dd13551c162104d010d1eb1b6611e38904458d}
@@ -139,7 +142,7 @@ services:
       interval: 5s
       timeout: 10s
     cpus: 3
-    mem_limit: 4096m
+    mem_limit: 2048m
     mem_reservation: 512m
     #<<: *logging
 
@@ -309,7 +312,7 @@ services:
       - "traefik.tcp.routers._dns_tcp.service=_dns_tcp"
       - "traefik.tcp.services._dns_tcp.loadbalancer.server.port=53"
     cpus: 0.5
-    mem_limit: 128m
+    mem_limit: 512m
     mem_reservation: 64m
     #<<: *logging
 
@@ -509,7 +512,7 @@ services:
       - "traefik.http.services.jackett.loadbalancer.server.port=9117"
       
     cpus: 2
-    mem_limit: 1024m
+    mem_limit: 512m
     mem_reservation: 128m
     #<<: *logging
 
@@ -576,7 +579,7 @@ services:
       - "traefik.http.services.rss.loadbalancer.server.port=8080"
       - "traefik.http.routers.rss.middlewares=authelia@docker,default-headers@file"
     cpus: 2
-    mem_limit: 512m
+    mem_limit: 256m
     mem_reservation: 128m
     # <<: *logging
 
@@ -596,7 +599,7 @@ services:
       interval: 10s
       start_period: 30s
     cpus: 1
-    mem_limit: 512m
+    mem_limit: 128m
     mem_reservation: 64m
     # <<: *logging
   
@@ -648,7 +651,7 @@ services:
       interval: 10s
       start_period: 30s
     cpus: 1
-    mem_limit: 512m
+    mem_limit: 128m
     mem_reservation: 64m
     # <<: *logging
 
@@ -661,7 +664,7 @@ services:
     volumes:
       - /data/redis:/var/lib/redis
     cpus: 1
-    mem_limit: 128m
+    mem_limit: 64m
     mem_reservation: 32m
     # <<: *logging
 
@@ -808,7 +811,7 @@ services:
       - "traefik.tcp.routers.sftp.service=sftp"
       - "traefik.tcp.services.sftp.loadbalancer.server.port=22"
     cpus: 1
-    mem_limit: 512m
+    mem_limit: 256m
     mem_reservation: 128m
 
 networks:
