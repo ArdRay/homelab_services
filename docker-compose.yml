@@ -19,7 +19,7 @@ services:
       - "--entrypoints.dns_udp.address=:53/udp"
       - "--entrypoints.dns_tcp.address=:53"
       - "--entrypoints.loki.address=:3100"
-      - "--entrypoints.healthcheck.address=:8000"
+      - "--entrypoints.healthchecks.address=:8000"
       - "--entrypoints.ssh.address=:2222"
       - "--entrypoints.squid.address=:3128"
       - "--entrypoints.ping.address=:8082"
