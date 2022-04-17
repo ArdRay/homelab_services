@@ -540,7 +540,7 @@ services:
       #- SUPERUSER_PASSWORD=<SUPERUSER_PASSWORD>
       #- REGENERATE_SETTINGS=True/False #optional
       #- SITE_LOGO_URL=<SITE_LOGO_URL> #optional
-      - ALLOWED_HOSTS=${INTERNAL_DOMAIN}
+      #- ALLOWED_HOSTS=${INTERNAL_DOMAIN}
       - SECRET_KEY=${HEALTHCHECKS_SECRET_KEY}
       #- APPRISE_ENABLED=True/False #optional
     volumes:
