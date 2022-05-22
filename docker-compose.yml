@@ -303,7 +303,6 @@ services:
       - 'traefik.http.middlewares.authelia-basic.forwardauth.address=http://authelia:9091/api/verify?auth=basic'
       - 'traefik.http.middlewares.authelia-basic.forwardauth.trustForwardHeader=true'
       - 'traefik.http.middlewares.authelia-basic.forwardauth.authResponseHeaders=Remote-User, Remote-Groups, Remote-Name, Remote-Email'
-      - "traefik.http.routers.authelia-rtr.middlewares=default-headers@file"
     cpus: 2
     mem_limit: 256m
     mem_reservation: 64m
