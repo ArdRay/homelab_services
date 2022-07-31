@@ -445,7 +445,7 @@ services:
 
   grafana:
     image: grafana/grafana-oss:${GRAFANA_VERSION:-8.4.4@sha256:b1a82a9f837ce269542cc023f0607753ca7f709195d2bdec93e2e703fd13f8c0}
-    user: "472:0"
+    user: "0:0"
     networks:
       - proxy
       - monitoring
