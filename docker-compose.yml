@@ -193,6 +193,7 @@ services:
       - "--entrypoints.dns_tcp.address=:53"
       - "--entrypoints.sftp.address=:2222"
       - "--entrypoints.ping.address=:8082"
+      - "--entrypoints.postgres.address=:5432"
       - "--api=true"
       - "--api.dashboard=true"
       - "--api.debug=true"
@@ -231,6 +232,10 @@ services:
         published: 2222
         protocol: tcp
         mode: host
+      - target: 5432
+        published: 5432
+        protocol: tcp
+        mode: host
     healthcheck:
       test: wget --no-verbose --tries=1 --spider http://localhost:8082/ping || exit 1
       interval: 5s
@@ -249,6 +254,7 @@ services:
       - media_automation
       - dashboard
       - nextcloud
+      - portfolio
     environment:
       CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
       #HTTP_PROXY: http://http_proxy.internal:3128
@@ -580,6 +586,30 @@ services:
     mem_reservation: 64m
     # <<: *logging
   
+  postgres_portfolio:
+    image: postgres:14.5@sha256:8d46fa657b46fb96a707b3dff90ff95014476874a96389f0370c1c2a2846f249
+    restart: always
+    networks:
+      - portfolio
+    volumes:
+      - /data/postgres_portfolio:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=portfolio
+      - POSTGRES_USER=${POSTGRES_PORTFOLIO_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PORTFOLIO_PASSWORD}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q"]
+      interval: 10s
+      start_period: 30s
+    cpus: 1
+    mem_limit: 128m
+    mem_reservation: 64m
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.postgres_portfolio.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.postgres_portfolio.entrypoints=postgres_portfolio"
+      - "traefik.tcp.routers.postgres_portfolio.service=postgres_portfolio"
+      - "traefik.tcp.services.postgres_portfolio.loadbalancer.server.port=5432"
 
   # deemix:
   #   image: registry.gitlab.com/bockiii/deemix-docker
@@ -822,5 +852,8 @@ networks:
     driver: bridge
     internal: true
   sftp:
+    driver: bridge
+    internal: true
+  portfolio:
     driver: bridge
     internal: true
