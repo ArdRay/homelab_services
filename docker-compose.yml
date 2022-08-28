@@ -193,7 +193,7 @@ services:
       - "--entrypoints.dns_tcp.address=:53"
       - "--entrypoints.sftp.address=:2222"
       - "--entrypoints.ping.address=:8082"
-      - "--entrypoints.postgres.address=:5432"
+      - "--entrypoints.postgres_portfolio.address=:5432"
       - "--api=true"
       - "--api.dashboard=true"
       - "--api.debug=true"
