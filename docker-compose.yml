@@ -642,25 +642,25 @@ services:
   #     - "traefik.http.services.deemix.loadbalancer.server.port=6595"
     #<<: *logging
 
-  postgres_nextcloud:
-    image: postgres:${POSTGRES_ALPINE_VERSION:-14.2-alpine3.15@sha256:ddcffbdfad26e68db36cbcc7a50f03ee2aa8079bb986d92d0b3a5da51f2f9baf}
-    restart: always
-    networks:
-      - nextcloud
-    volumes:
-      - /data/postgres_nextcloud:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=nextcloud_db
-      - POSTGRES_USER=${POSTGRES_NEXTCLOUD_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_NEXTCLOUD_PASSWORD}
-    healthcheck:
-      test: ["CMD", "pg_isready", "-q"]
-      interval: 10s
-      start_period: 30s
-    cpus: 1
-    mem_limit: 128m
-    mem_reservation: 64m
-    # <<: *logging
+  # postgres_nextcloud:
+  #   image: postgres:${POSTGRES_ALPINE_VERSION:-14.2-alpine3.15@sha256:ddcffbdfad26e68db36cbcc7a50f03ee2aa8079bb986d92d0b3a5da51f2f9baf}
+  #   restart: always
+  #   networks:
+  #     - nextcloud
+  #   volumes:
+  #     - /data/postgres_nextcloud:/var/lib/postgresql/data
+  #   environment:
+  #     - POSTGRES_DB=nextcloud_db
+  #     - POSTGRES_USER=${POSTGRES_NEXTCLOUD_USER}
+  #     - POSTGRES_PASSWORD=${POSTGRES_NEXTCLOUD_PASSWORD}
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-q"]
+  #     interval: 10s
+  #     start_period: 30s
+  #   cpus: 1
+  #   mem_limit: 128m
+  #   mem_reservation: 64m
+  #   # <<: *logging
 
   redis:
     image: redis:${REDIS_ALPINE_VERSION:-alpine3.15@sha256:32f8cf4bf6412626b21273fed376182b6786b75182e4a19f90f3f57d01362fbb}
