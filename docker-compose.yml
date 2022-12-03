@@ -248,12 +248,12 @@ services:
       - socket_proxy
       - proxy
       - dns
-      - rente
+      #- rente
       - vpn
       - rss
       - media_automation
       - dashboard
-      - nextcloud
+      #- nextcloud
       - portfolio
     environment:
       CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
