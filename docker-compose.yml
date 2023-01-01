@@ -92,7 +92,7 @@ services:
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
       - VPN_SERVICE_PROVIDER=protonvpn
-      - SERVER_NAMES=PL#21,GE#1,BG#1,FR#54
+      - SERVER_NAMES=PL#21,AT#17,CZ#1,BE#13
       - OPENVPN_IPV6=off
       - DOT=off
       - SHADOWSOCKS=off
