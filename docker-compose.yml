@@ -70,7 +70,6 @@ services:
     environment:
       - LOG_LEVEL=info
       - TZ=Europe/London
-      - LOG_LEVEL=info
     restart: unless-stopped
     # cpus: 0.5
     # mem_limit: 64m
