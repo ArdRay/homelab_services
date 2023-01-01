@@ -164,7 +164,7 @@ services:
       - "traefik.http.routers.bitcoin-rtr.service=bitcoin-svc"
       - "traefik.http.services.bitcoin-svc.loadbalancer.server.port=8332"
     cpus: 4
-    mem_limit: 8192m
+    mem_limit: 16384m
     mem_reservation: 4096m
 
   electrs:
@@ -204,92 +204,92 @@ services:
     mem_limit: 4096m
     mem_reservation: 1024m
 
-  mempool_frontend:
-    image: mempool/frontend:${MEMPOOL_FRONTEND_VERSION:-v2.3.1@sha256:29a7d4823365228d63be3d8ec29f65f5557ae1d1ea85ba6cf0621a26138c9209}
-    command: "./wait-for mempool_database.internal:3306 --timeout=720 -- nginx -g 'daemon off;'"
-    user: "1000:1000"
-    networks:
-      - proxy
-      - mempool
-    depends_on:
-      proxy:
-        condition: service_healthy
-    environment:
-      FRONTEND_HTTP_PORT: "8080"
-      BACKEND_MAINNET_HTTP_HOST: "mempool_backend.internal"
-    restart: always
-    stop_grace_period: 1m
-    cpus: 2
-    mem_limit: 512m
-    mem_reservation: 128m
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.mempool-rtr.rule=Host(`mempool.${INTERNAL_DOMAIN}`)"
-      - "traefik.http.routers.mempool-rtr.entrypoints=tls"
-      - "traefik.http.routers.mempool-rtr.tls=true"
-      - "traefik.http.routers.mempool-rtr.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.mempool-rtr.service=mempool-svc"
-      - "traefik.http.services.mempool-svc.loadbalancer.server.port=8080"
+  # mempool_frontend:
+  #   image: mempool/frontend:${MEMPOOL_FRONTEND_VERSION:-v2.3.1@sha256:29a7d4823365228d63be3d8ec29f65f5557ae1d1ea85ba6cf0621a26138c9209}
+  #   command: "./wait-for mempool_database.internal:3306 --timeout=720 -- nginx -g 'daemon off;'"
+  #   user: "1000:1000"
+  #   networks:
+  #     - proxy
+  #     - mempool
+  #   depends_on:
+  #     proxy:
+  #       condition: service_healthy
+  #   environment:
+  #     FRONTEND_HTTP_PORT: "8080"
+  #     BACKEND_MAINNET_HTTP_HOST: "mempool_backend.internal"
+  #   restart: always
+  #   stop_grace_period: 1m
+  #   cpus: 2
+  #   mem_limit: 512m
+  #   mem_reservation: 128m
+  #   labels:
+  #     - "traefik.enable=true"
+  #     - "traefik.http.routers.mempool-rtr.rule=Host(`mempool.${INTERNAL_DOMAIN}`)"
+  #     - "traefik.http.routers.mempool-rtr.entrypoints=tls"
+  #     - "traefik.http.routers.mempool-rtr.tls=true"
+  #     - "traefik.http.routers.mempool-rtr.tls.certresolver=letsencrypt"
+  #     - "traefik.http.routers.mempool-rtr.service=mempool-svc"
+  #     - "traefik.http.services.mempool-svc.loadbalancer.server.port=8080"
 
-  mempool_backend:
-    image: mempool/backend:${MEMPOOL_BACKEND_VERSION:-v2.3.1@sha256:d72049dde9fe6fd577dc08e99c415403da65bc7862b3beba919fac682a2bd632}
-    command: "./wait-for-it.sh mempool_database.internal:3306 --timeout=720 --strict -- ./start.sh"
-    hostname: mempool_backend.internal
-    user: "1000:1000"
-    networks:
-      - mempool
-      - bitcoin
-      - tor
-    depends_on:
-      bitcoin:
-        condition: service_started
-      electrs:
-        condition: service_started
-      mempool_database:
-        condition: service_started
-    environment:
-      MEMPOOL_BACKEND: "electrum"
-      ELECTRUM_HOST: "electrs.internal"
-      ELECTRUM_PORT: "50001"
-      ELECTRUM_TLS_ENABLED: "false"
-      CORE_RPC_HOST: "bitcoin.internal"
-      CORE_RPC_PORT: "8332"
-      CORE_RPC_USERNAME: "${MEMPOOL_CORE_RPC_USERNAME}"
-      CORE_RPC_PASSWORD: "${MEMPOOL_CORE_RPC_PASSWORD}"
-      DATABASE_ENABLED: "true"
-      DATABASE_HOST: "mempool_database.internal"
-      DATABASE_DATABASE: "${MEMPOOL_DATABASE_DATABASE}"
-      DATABASE_USERNAME: "${MEMPOOL_DATABASE_USERNAME}"
-      DATABASE_PASSWORD: "${MEMPOOL_DATABASE_PASSWORD}"
-      STATISTICS_ENABLED: "true"
-      SOCKS5PROXY_ENABLED: "true"
-      SOCKS5PROXY_HOST: "tor_socks5.internal"
-      SOCKS5PROXY_PORT: "9150"
-    restart: always
-    stop_grace_period: 1m
-    volumes:
-      - ${DATA_FOLDER}/mempool_backend:/backend/cache
-    cpus: 2
-    mem_limit: 512m
-    mem_reservation: 128m
+  # mempool_backend:
+  #   image: mempool/backend:${MEMPOOL_BACKEND_VERSION:-v2.3.1@sha256:d72049dde9fe6fd577dc08e99c415403da65bc7862b3beba919fac682a2bd632}
+  #   command: "./wait-for-it.sh mempool_database.internal:3306 --timeout=720 --strict -- ./start.sh"
+  #   hostname: mempool_backend.internal
+  #   user: "1000:1000"
+  #   networks:
+  #     - mempool
+  #     - bitcoin
+  #     - tor
+  #   depends_on:
+  #     bitcoin:
+  #       condition: service_started
+  #     electrs:
+  #       condition: service_started
+  #     mempool_database:
+  #       condition: service_started
+  #   environment:
+  #     MEMPOOL_BACKEND: "electrum"
+  #     ELECTRUM_HOST: "electrs.internal"
+  #     ELECTRUM_PORT: "50001"
+  #     ELECTRUM_TLS_ENABLED: "false"
+  #     CORE_RPC_HOST: "bitcoin.internal"
+  #     CORE_RPC_PORT: "8332"
+  #     CORE_RPC_USERNAME: "${MEMPOOL_CORE_RPC_USERNAME}"
+  #     CORE_RPC_PASSWORD: "${MEMPOOL_CORE_RPC_PASSWORD}"
+  #     DATABASE_ENABLED: "true"
+  #     DATABASE_HOST: "mempool_database.internal"
+  #     DATABASE_DATABASE: "${MEMPOOL_DATABASE_DATABASE}"
+  #     DATABASE_USERNAME: "${MEMPOOL_DATABASE_USERNAME}"
+  #     DATABASE_PASSWORD: "${MEMPOOL_DATABASE_PASSWORD}"
+  #     STATISTICS_ENABLED: "true"
+  #     SOCKS5PROXY_ENABLED: "true"
+  #     SOCKS5PROXY_HOST: "tor_socks5.internal"
+  #     SOCKS5PROXY_PORT: "9150"
+  #   restart: always
+  #   stop_grace_period: 1m
+  #   volumes:
+  #     - ${DATA_FOLDER}/mempool_backend:/backend/cache
+  #   cpus: 2
+  #   mem_limit: 512m
+  #   mem_reservation: 128m
   
-  mempool_database:
-    image: mariadb:${MARIADB_VERSION:-10.7@sha256:364e6c38ee64f7f961cc1b70d5c31e554754c4a9fcd6516c9b5c31accf134e61}
-    hostname: mempool_database.internal
-    user: "1000:1000"
-    networks:
-      - mempool
-    environment:
-      MYSQL_DATABASE: "${MEMPOOL_DATABASE_DATABASE}"
-      MYSQL_USER: "${MEMPOOL_DATABASE_USERNAME}"
-      MYSQL_PASSWORD: "${MEMPOOL_DATABASE_PASSWORD}"
-      MYSQL_ROOT_PASSWORD: "${MEMPOOL_DATABASE_ROOT_PASSWORD}"
-    stop_grace_period: 1m
-    volumes:
-      - ${SSD_FOLDER}/mempool_database:/var/lib/mysql
-    cpus: 2
-    mem_limit: 512m
-    mem_reservation: 128m
+  # mempool_database:
+  #   image: mariadb:${MARIADB_VERSION:-10.7@sha256:364e6c38ee64f7f961cc1b70d5c31e554754c4a9fcd6516c9b5c31accf134e61}
+  #   hostname: mempool_database.internal
+  #   user: "1000:1000"
+  #   networks:
+  #     - mempool
+  #   environment:
+  #     MYSQL_DATABASE: "${MEMPOOL_DATABASE_DATABASE}"
+  #     MYSQL_USER: "${MEMPOOL_DATABASE_USERNAME}"
+  #     MYSQL_PASSWORD: "${MEMPOOL_DATABASE_PASSWORD}"
+  #     MYSQL_ROOT_PASSWORD: "${MEMPOOL_DATABASE_ROOT_PASSWORD}"
+  #   stop_grace_period: 1m
+  #   volumes:
+  #     - ${SSD_FOLDER}/mempool_database:/var/lib/mysql
+  #   cpus: 2
+  #   mem_limit: 512m
+  #   mem_reservation: 128m
 
   # lnd:
   #   image: lightninglabs/lnd:v0.14.0-beta@sha256:01bcd6d90e25dd5ca35c33f5ec1291218b4d3d898263ea407466a58b04329d0e
@@ -481,5 +481,5 @@ networks:
   socket_proxy:
     driver: bridge
     internal: true
-  mempool:
-    driver: bridge
+  # mempool:
+  #   driver: bridge
