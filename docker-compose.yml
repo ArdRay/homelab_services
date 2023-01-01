@@ -70,10 +70,11 @@ services:
     environment:
       - LOG_LEVEL=info
       - TZ=Europe/London
+      - LOG_LEVEL=info
     restart: unless-stopped
-    cpus: 0.5
-    mem_limit: 64m
-    mem_reservation: 32m
+    # cpus: 0.5
+    # mem_limit: 64m
+    # mem_reservation: 32m
 
   vpn:
     image: qmcgaw/gluetun:${GLUETUN_VERSION:-v3.28.1@sha256:c9fd72306d59bb3ed4ac4a1916dd13551c162104d010d1eb1b6611e38904458d}
