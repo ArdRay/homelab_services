@@ -726,7 +726,7 @@ services:
     cpus: 4
     mem_limit: 8192m
     mem_reservation: 2048m
-    <<: *logging
+    #<<: *logging
 
   # nextcloud_exporter:
   #   image: xperimental/nextcloud-exporter
