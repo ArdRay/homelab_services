@@ -676,7 +676,8 @@ services:
     # <<: *logging
 
   nextcloud:
-    image: nextcloud:25.0.3@sha256:7659f364a8bbca6c3f0eac2c290546b5c3011610c7ac1a55b8fc19012bc99a18
+    #image: nextcloud:25.0.3@sha256:7659f364a8bbca6c3f0eac2c290546b5c3011610c7ac1a55b8fc19012bc99a18
+    image: nextcloud:24.0.9
     hostname: nextcloud.internal
     restart: always
     networks:
