@@ -675,58 +675,58 @@ services:
     mem_reservation: 32m
     # <<: *logging
 
-  # nextcloud:
-  #   image: nextcloud:23.0
-  #   hostname: nextcloud.internal
-  #   restart: always
-  #   networks:
-  #     - nextcloud
-  #     - proxy
-  #     - redis
-  #     - proxies
-  #   depends_on:
-  #     proxy:
-  #       condition: service_healthy
-  #     postgres_nextcloud:
-  #       condition: service_started
-  #     redis:
-  #       condition: service_started
-  #   volumes:
-  #     - /data/nextcloud_config:/var/www/html
-  #     - /data/nextcloud_data:/var/www/html/data
-  #     - /data/ebooks:/data/ebooks
-  #     - /data/audiobooks:/data/audiobooks
-  #   environment:
-  #     - POSTGRES_HOST=postgres_nextcloud
-  #     - POSTGRES_USER=${POSTGRES_NEXTCLOUD_USER}
-  #     - POSTGRES_PASSWORD=${POSTGRES_NEXTCLOUD_PASSWORD}
-  #     - POSTGRES_DB=nextcloud_db
-  #     - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
-  #     - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USERNAME}
-  #     - NEXTCLOUD_TRUSTED_DOMAINS=cloud.${INTERNAL_DOMAIN}
-  #     - OVERWRITEHOST=cloud.${INTERNAL_DOMAIN}
-  #     - OVERWRITEPROTOCOL=https
-  #     - REDIS_HOST=redis.internal
-  #   # healthcheck:
-  #   #   test: curl -fSs http://127.0.0.1:80/ocs/v2.php/apps/serverinfo/api/v1/info || exit 1
-  #   #   interval: 10s
-  #   #   start_period: 120s
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.http.routers.nextcloud.rule=Host(`cloud.${INTERNAL_DOMAIN}`)"
-  #     - "traefik.http.routers.nextcloud.entrypoints=tls"
-  #     - "traefik.http.routers.nextcloud.tls=true"
-  #     - "traefik.http.routers.nextcloud.tls.certresolver=letsencrypt"
-  #     - "traefik.http.routers.nextcloud.service=nextcloud"
-  #     - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
-  #     - "traefik.http.middlewares.nextcloud-redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
-  #     - "traefik.http.middlewares.nextcloud-redirect.redirectregex.replacement=https://$${1}/remote.php/dav/"
-  #     - "traefik.http.middlewares.nextcloud-redirect.redirectregex.permanent=true"
-  #     - "traefik.http.routers.nextcloud.middlewares=nextcloud-redirect@docker"
-  #   cpus: 6
-  #   mem_limit: 4096m
-  #   mem_reservation: 1024m
-    # <<: *logging
+  nextcloud:
+    image: nextcloud:25.0.3@sha256:7659f364a8bbca6c3f0eac2c290546b5c3011610c7ac1a55b8fc19012bc99a18
+    hostname: nextcloud.internal
+    restart: always
+    networks:
+      - nextcloud
+      - proxy
+      - redis
+      - proxies
+    depends_on:
+      proxy:
+        condition: service_healthy
+      postgres_nextcloud:
+        condition: service_started
+      redis:
+        condition: service_started
+    volumes:
+      - /data/nextcloud_config:/var/www/html
+      - /data/nextcloud_data:/var/www/html/data
+      - /data/ebooks:/data/ebooks
+      - /data/audiobooks:/data/audiobooks
+    environment:
+      - POSTGRES_HOST=postgres_nextcloud
+      - POSTGRES_USER=${POSTGRES_NEXTCLOUD_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_NEXTCLOUD_PASSWORD}
+      - POSTGRES_DB=nextcloud_db
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USERNAME}
+      - NEXTCLOUD_TRUSTED_DOMAINS=cloud.${INTERNAL_DOMAIN}
+      - OVERWRITEHOST=cloud.${INTERNAL_DOMAIN}
+      - OVERWRITEPROTOCOL=https
+      - REDIS_HOST=redis.internal
+    # healthcheck:
+    #   test: curl -fSs http://127.0.0.1:80/ocs/v2.php/apps/serverinfo/api/v1/info || exit 1
+    #   interval: 10s
+    #   start_period: 120s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nextcloud.rule=Host(`cloud.${INTERNAL_DOMAIN}`)"
+      - "traefik.http.routers.nextcloud.entrypoints=tls"
+      - "traefik.http.routers.nextcloud.tls=true"
+      - "traefik.http.routers.nextcloud.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.nextcloud.service=nextcloud"
+      - "traefik.http.services.nextcloud.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.nextcloud-redirect.redirectregex.regex=https://(.*)/.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.nextcloud-redirect.redirectregex.replacement=https://$${1}/remote.php/dav/"
+      - "traefik.http.middlewares.nextcloud-redirect.redirectregex.permanent=true"
+      - "traefik.http.routers.nextcloud.middlewares=nextcloud-redirect@docker"
+    cpus: 4
+    mem_limit: 8192m
+    mem_reservation: 2048m
+    <<: *logging
 
   # nextcloud_exporter:
   #   image: xperimental/nextcloud-exporter
@@ -844,8 +844,8 @@ networks:
   # postgres:
   #   driver: bridge
   #   internal: true
-  #nextcloud:
-  #  driver: bridge
+  nextcloud:
+    driver: bridge
   proxies:
     driver: bridge
   redis:
