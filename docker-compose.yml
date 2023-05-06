@@ -800,26 +800,26 @@ services:
   #     - "traefik.http.services.matrix-svc.loadbalancer.server.port=8008"
   #     - "traefik.http.routers.matrix-rtr.middlewares=default-header@file"
 
-  # sftp:
-  #   image: emberstack/sftp:${SFTP_VERSION:-5.1.5@sha256:f1633cb7ed92c3a9ac15e70a1c3f35c7f3da3f6a2c2dd84b1e0f34d980c9601a}
-  #   restart: unless-stopped
-  #   networks:
-  #     - proxy
-  #   depends_on:
-  #     proxy:
-  #       condition: service_healthy
-  #   volumes:
-  #     - /opt/docker/sftp/sftp.json:/app/config/sftp.json:ro
-  #     - /data/sftp/lexmark:/home/lexmark/sftp:rw
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.tcp.routers.sftp.rule=HostSNI(`*`)"
-  #     - "traefik.tcp.routers.sftp.entrypoints=sftp"
-  #     - "traefik.tcp.routers.sftp.service=sftp"
-  #     - "traefik.tcp.services.sftp.loadbalancer.server.port=22"
-  #   cpus: 1
-  #   mem_limit: 256m
-  #   mem_reservation: 128m
+  sftp:
+    image: emberstack/sftp:${SFTP_VERSION:-5.1.5@sha256:f1633cb7ed92c3a9ac15e70a1c3f35c7f3da3f6a2c2dd84b1e0f34d980c9601a}
+    restart: unless-stopped
+    networks:
+      - proxy
+    depends_on:
+      proxy:
+        condition: service_healthy
+    volumes:
+      - /opt/docker/sftp/sftp.json:/app/config/sftp.json:ro
+      - /data/sftp/lexmark:/home/lexmark/sftp:rw
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.sftp.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.sftp.entrypoints=sftp"
+      - "traefik.tcp.routers.sftp.service=sftp"
+      - "traefik.tcp.services.sftp.loadbalancer.server.port=22"
+    cpus: 1
+    mem_limit: 256m
+    mem_reservation: 128m
 
 networks:
   proxy:
@@ -851,9 +851,9 @@ networks:
   redis:
     driver: bridge
     internal: true
-  # sftp:
-  #   driver: bridge
-  #   internal: true
+  sftp:
+    driver: bridge
+    internal: true
   portfolio:
     driver: bridge
     internal: true
